@@ -87,23 +87,20 @@ export const checkFeature = createAsyncThunk(
   }
 );
 
-// Check multiple features
+// Check multiple features in a single API call
 export const checkFeatures = createAsyncThunk(
   'features/checkMultiple',
   async (featureNames, thunkAPI) => {
     try {
-      const results = {};
-      for (const name of featureNames) {
-        const token = getToken();
-        const config = {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        };
-        const response = await axios.get(`${API_URL}/check/${name}`, config);
-        results[name] = response.data;
-      }
-      return results;
+      const token = getToken();
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      // Make a single API call to check all features at once
+      const response = await axios.post(`${API_URL}/check`, { featureNames }, config);
+      return response.data;
     } catch (error) {
       const message =
         (error.response && error.response.data && error.response.data.message) ||

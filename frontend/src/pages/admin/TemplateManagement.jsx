@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 
 const TemplateManagement = () => {
   const [templates, setTemplates] = useState([
-    { id: 1, name: 'Professional', category: 'General', isFree: true, isActive: true, usedBy: 124 },
-    { id: 2, name: 'Modern', category: 'Creative', isFree: false, price: 9.99, isActive: true, usedBy: 87 },
-    { id: 3, name: 'Minimal', category: 'General', isFree: true, isActive: false, usedBy: 42 },
-    { id: 4, name: 'Executive', category: 'Business', isFree: false, price: 14.99, isActive: true, usedBy: 63 },
-    { id: 5, name: 'Creative', category: 'Creative', isFree: false, price: 12.99, isActive: true, usedBy: 58 }
+    { id: 1, name: 'Professional', category: 'Business', isFree: true, price: 0, isActive: true, usedBy: 124 },
+    { id: 2, name: 'Creative', category: 'Creative', isFree: false, price: 9.99, isActive: true, usedBy: 87 },
+    { id: 3, name: 'Minimalist', category: 'General', isFree: true, price: 0, isActive: false, usedBy: 210 },
+    { id: 4, name: 'Executive', category: 'Business', isFree: false, price: 14.99, isActive: true, usedBy: 65 },
+    { id: 5, name: 'Modern', category: 'Technical', isFree: true, price: 0, isActive: true, usedBy: 156 },
+    { id: 6, name: 'Academic', category: 'General', isFree: false, price: 7.99, isActive: true, usedBy: 92 }
   ]);
   
   const [showAddModal, setShowAddModal] = useState(false);
@@ -43,7 +44,7 @@ const TemplateManagement = () => {
   
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Template Management</h1>
           <p className="mt-2 text-gray-600">Manage resume templates and their availability</p>

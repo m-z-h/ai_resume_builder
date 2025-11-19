@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -50,6 +50,176 @@ const DraggableSection = ({ section, index, moveSection, children }) => {
   );
 };
 
+// Resume Preview Component
+const ResumePreview = ({ resumeData }) => {
+  // Generate the title from name if not provided
+  const displayTitle = resumeData.title && resumeData.title.trim() !== '' 
+    ? resumeData.title 
+    : `${resumeData.personalInfo.firstName} ${resumeData.personalInfo.lastName}`.trim();
+  
+  return (
+    <div className="border border-gray-300 rounded-lg p-8 min-h-[600px]">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold">
+            {displayTitle}
+          </h1>
+          <div className="flex flex-wrap justify-center gap-4 mt-2 text-sm text-gray-600">
+            {resumeData.personalInfo.email && <span>{resumeData.personalInfo.email}</span>}
+            {resumeData.personalInfo.phone && <span>{resumeData.personalInfo.phone}</span>}
+            {resumeData.personalInfo.address && <span>{resumeData.personalInfo.address}</span>}
+            {resumeData.personalInfo.linkedin && <span>LinkedIn: {resumeData.personalInfo.linkedin}</span>}
+            {resumeData.personalInfo.website && <span>Website: {resumeData.personalInfo.website}</span>}
+          </div>
+        </div>
+
+        {/* Professional Summary */}
+        {resumeData.personalInfo.summary && (
+          <div className="mb-8">
+            <h2 className="text-xl font-bold border-b-2 border-gray-300 pb-1 mb-3">Professional Summary</h2>
+            <p className="text-gray-700">{resumeData.personalInfo.summary}</p>
+          </div>
+        )}
+
+        {/* Work Experience */}
+        {resumeData.experience.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-bold border-b-2 border-gray-300 pb-1 mb-3">Work Experience</h2>
+            <div className="space-y-6">
+              {resumeData.experience.map((exp, index) => (
+                <div key={index}>
+                  <div className="flex justify-between">
+                    <h3 className="text-lg font-semibold">{exp.position}</h3>
+                    <span className="text-gray-600">
+                      {exp.startDate && new Date(exp.startDate).toLocaleDateString()} - 
+                      {exp.isCurrent ? 'Present' : exp.endDate && new Date(exp.endDate).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <p className="font-medium">{exp.company}</p>
+                  {exp.description && <p className="mt-2 text-gray-700">{exp.description}</p>}
+                  {exp.achievements && exp.achievements.length > 0 && (
+                    <ul className="mt-2 list-disc list-inside text-gray-700">
+                      {exp.achievements.filter(ach => ach).map((ach, achIndex) => (
+                        <li key={achIndex}>{ach}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Education */}
+        {resumeData.education.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-bold border-b-2 border-gray-300 pb-1 mb-3">Education</h2>
+            <div className="space-y-4">
+              {resumeData.education.map((edu, index) => (
+                <div key={index}>
+                  <div className="flex justify-between">
+                    <h3 className="text-lg font-semibold">{edu.degree}</h3>
+                    <span className="text-gray-600">
+                      {edu.startDate && new Date(edu.startDate).getFullYear()} - 
+                      {edu.endDate ? new Date(edu.endDate).getFullYear() : 'Present'}
+                    </span>
+                  </div>
+                  <p className="font-medium">{edu.institution}</p>
+                  {edu.fieldOfStudy && <p>{edu.fieldOfStudy}</p>}
+                  {edu.description && <p className="mt-1 text-gray-700">{edu.description}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Skills */}
+        {resumeData.skills.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-bold border-b-2 border-gray-300 pb-1 mb-3">Skills</h2>
+            <div className="flex flex-wrap gap-2">
+              {resumeData.skills.map((skill, index) => (
+                <span key={index} className="bg-gray-100 px-3 py-1 rounded-full text-sm">
+                  {skill.name} {skill.level && `(${skill.level})`}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Certifications */}
+        {resumeData.certifications.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-bold border-b-2 border-gray-300 pb-1 mb-3">Certifications</h2>
+            <div className="space-y-3">
+              {resumeData.certifications.map((cert, index) => (
+                <div key={index}>
+                  <h3 className="font-semibold">{cert.name}</h3>
+                  <p className="text-gray-600">{cert.issuer}</p>
+                  {cert.date && <p className="text-sm">Issued: {new Date(cert.date).toLocaleDateString()}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Projects */}
+        {resumeData.projects.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-bold border-b-2 border-gray-300 pb-1 mb-3">Projects</h2>
+            <div className="space-y-4">
+              {resumeData.projects.map((project, index) => (
+                <div key={index}>
+                  <div className="flex justify-between">
+                    <h3 className="text-lg font-semibold">{project.name}</h3>
+                    {project.startDate && (
+                      <span className="text-gray-600">
+                        {new Date(project.startDate).getFullYear()} - 
+                        {project.endDate ? new Date(project.endDate).getFullYear() : 'Present'}
+                      </span>
+                    )}
+                  </div>
+                  {project.description && <p className="mt-1 text-gray-700">{project.description}</p>}
+                  {project.url && (
+                    <a href={project.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                      {project.url}
+                    </a>
+                  )}
+                  {project.technologies && project.technologies.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {project.technologies.filter(tech => tech).map((tech, techIndex) => (
+                        <span key={techIndex} className="bg-gray-100 px-2 py-1 rounded text-xs">
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Languages */}
+        {resumeData.languages.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-bold border-b-2 border-gray-300 pb-1 mb-3">Languages</h2>
+            <div className="grid grid-cols-2 gap-2">
+              {resumeData.languages.map((lang, index) => (
+                <div key={index} className="flex justify-between">
+                  <span>{lang.name}</span>
+                  {lang.proficiency && <span className="text-gray-600">{lang.proficiency}</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // Resume Builder Component
 const ResumeBuilder = () => {
   const { id } = useParams();
@@ -58,15 +228,23 @@ const ResumeBuilder = () => {
   const { resume, isLoading } = useSelector(state => state.resumes);
   const { templates } = useSelector(state => state.templates);
   
-  // Check which features are enabled
-  const featureStatus = useMultipleFeatureCheck([
+  // Define the feature names array as a constant to prevent re-renders
+  const resumeFeatureNames = useMemo(() => [
     'aiResumeGenerator', 
     'aiSectionImprover', 
     'atsScoreChecker', 
     'pdfDownload', 
     'odfDownload', 
     'docxDownload'
-  ]);
+  ], []);
+  
+  // Check which features are enabled
+  const featureStatus = useMultipleFeatureCheck(resumeFeatureNames);
+  
+  // Debug log to see feature status
+  useEffect(() => {
+    console.log('ResumeBuilder featureStatus:', featureStatus);
+  }, [featureStatus]);
   
   const [resumeData, setResumeData] = useState({
     title: '',
@@ -116,35 +294,106 @@ const ResumeBuilder = () => {
     }
   }, [resume, id]);
   
-  // Handle input changes
-  const handleInputChange = (e, section = null, index = null, field = null) => {
+  // Handle input changes for personal info
+  const handlePersonalInfoChange = (e) => {
     const { name, value } = e.target;
-    
-    if (section) {
-      // Handle nested array fields
-      setResumeData(prev => {
-        const updated = { ...prev };
-        if (index !== null && field) {
-          // Update specific item in array
-          updated[section] = [...updated[section]];
-          updated[section][index] = { ...updated[section][index], [field]: value };
-        } else if (index !== null) {
-          // Update entire item in array
-          updated[section] = [...updated[section]];
-          updated[section][index] = value;
-        } else {
-          // Update entire section
-          updated[section] = value;
-        }
-        return updated;
-      });
-    } else {
-      // Handle top-level fields
-      setResumeData(prev => ({
-        ...prev,
+    setResumeData(prev => ({
+      ...prev,
+      personalInfo: {
+        ...prev.personalInfo,
         [name]: value
-      }));
-    }
+      }
+    }));
+  };
+  
+  // Handle input changes for array items
+  const handleArrayItemChange = (section, index, field, value) => {
+    setResumeData(prev => {
+      const updated = { ...prev };
+      updated[section] = [...updated[section]];
+      updated[section][index] = { ...updated[section][index], [field]: value };
+      return updated;
+    });
+  };
+  
+  // Handle achievements changes
+  const handleAchievementsChange = (expIndex, achIndex, value) => {
+    setResumeData(prev => {
+      const updated = { ...prev };
+      updated.experience = [...updated.experience];
+      updated.experience[expIndex] = { ...updated.experience[expIndex] };
+      const achievements = [...updated.experience[expIndex].achievements];
+      achievements[achIndex] = value;
+      updated.experience[expIndex].achievements = achievements;
+      return updated;
+    });
+  };
+  
+  // Add achievement to experience
+  const addAchievement = (expIndex) => {
+    setResumeData(prev => {
+      const updated = { ...prev };
+      updated.experience = [...updated.experience];
+      updated.experience[expIndex] = { ...updated.experience[expIndex] };
+      updated.experience[expIndex].achievements = [
+        ...updated.experience[expIndex].achievements,
+        ''
+      ];
+      return updated;
+    });
+  };
+  
+  // Remove achievement from experience
+  const removeAchievement = (expIndex, achIndex) => {
+    setResumeData(prev => {
+      const updated = { ...prev };
+      updated.experience = [...updated.experience];
+      updated.experience[expIndex] = { ...updated.experience[expIndex] };
+      const achievements = [...updated.experience[expIndex].achievements];
+      achievements.splice(achIndex, 1);
+      updated.experience[expIndex].achievements = achievements;
+      return updated;
+    });
+  };
+  
+  // Handle technologies changes in projects
+  const handleTechnologiesChange = (projIndex, techIndex, value) => {
+    setResumeData(prev => {
+      const updated = { ...prev };
+      updated.projects = [...updated.projects];
+      updated.projects[projIndex] = { ...updated.projects[projIndex] };
+      const technologies = [...updated.projects[projIndex].technologies];
+      technologies[techIndex] = value;
+      updated.projects[projIndex].technologies = technologies;
+      return updated;
+    });
+  };
+  
+  // Add technology to project
+  const addTechnology = (projIndex) => {
+    setResumeData(prev => {
+      const updated = { ...prev };
+      updated.projects = [...updated.projects];
+      updated.projects[projIndex] = { ...updated.projects[projIndex] };
+      updated.projects[projIndex].technologies = [
+        ...updated.projects[projIndex].technologies,
+        ''
+      ];
+      return updated;
+    });
+  };
+  
+  // Remove technology from project
+  const removeTechnology = (projIndex, techIndex) => {
+    setResumeData(prev => {
+      const updated = { ...prev };
+      updated.projects = [...updated.projects];
+      updated.projects[projIndex] = { ...updated.projects[projIndex] };
+      const technologies = [...updated.projects[projIndex].technologies];
+      technologies.splice(techIndex, 1);
+      updated.projects[projIndex].technologies = technologies;
+      return updated;
+    });
   };
   
   // Move section in drag and drop
@@ -215,20 +464,30 @@ const ResumeBuilder = () => {
   // Save resume
   const saveResume = async () => {
     try {
+      // Automatically set the title to be the person's name if not provided
+      const resumeTitle = resumeData.title && resumeData.title.trim() !== '' 
+        ? resumeData.title 
+        : `${resumeData.personalInfo.firstName} ${resumeData.personalInfo.lastName}`.trim() || 'Untitled Resume';
+      
+      // Create a copy of resumeData with the updated title
+      const resumeDataWithTitle = {
+        ...resumeData,
+        title: resumeTitle
+      };
+      
       if (id) {
         // Update existing resume
-        await dispatch(updateResume({ id, resumeData })).unwrap();
+        await dispatch(updateResume({ id, resumeData: resumeDataWithTitle })).unwrap();
+        alert('Resume updated successfully!');
       } else {
         // Create new resume
-        const result = await dispatch(createResume(resumeData)).unwrap();
+        const result = await dispatch(createResume(resumeDataWithTitle)).unwrap();
         // Navigate to edit page
         navigate(`/resume/builder/${result._id}`);
+        alert('Resume created successfully!');
       }
-      // Show success message
-      alert('Resume saved successfully!');
     } catch (error) {
-      // Show error message
-      alert('Error saving resume: ' + error);
+      alert('Error saving resume: ' + (error.message || 'Unknown error'));
     }
   };
   
@@ -241,10 +500,9 @@ const ResumeBuilder = () => {
     
     try {
       await dispatch(downloadResumePdf(id)).unwrap();
-      // In a real implementation, this would trigger a file download
       alert('PDF download started!');
     } catch (error) {
-      alert('Error downloading PDF: ' + error);
+      alert('Error downloading PDF: ' + (error.message || 'Unknown error'));
     }
   };
   
@@ -257,10 +515,9 @@ const ResumeBuilder = () => {
     
     try {
       await dispatch(downloadResumeOdf(id)).unwrap();
-      // In a real implementation, this would trigger a file download
       alert('ODF download started!');
     } catch (error) {
-      alert('Error downloading ODF: ' + error);
+      alert('Error downloading ODF: ' + (error.message || 'Unknown error'));
     }
   };
   
@@ -273,10 +530,9 @@ const ResumeBuilder = () => {
     
     try {
       await dispatch(downloadResumeDocx(id)).unwrap();
-      // In a real implementation, this would trigger a file download
       alert('DOCX download started!');
     } catch (error) {
-      alert('Error downloading DOCX: ' + error);
+      alert('Error downloading DOCX: ' + (error.message || 'Unknown error'));
     }
   };
   
@@ -291,7 +547,7 @@ const ResumeBuilder = () => {
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4">
           <div className="mb-6 flex justify-between items-center">
             <h1 className="text-2xl font-bold text-gray-900">
               {id ? 'Edit Resume' : 'Create New Resume'}
@@ -330,7 +586,7 @@ const ResumeBuilder = () => {
                               type="text"
                               name="firstName"
                               value={resumeData.personalInfo.firstName}
-                              onChange={(e) => handleInputChange(e, 'personalInfo')}
+                              onChange={handlePersonalInfoChange}
                               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             />
                           </div>
@@ -340,7 +596,7 @@ const ResumeBuilder = () => {
                               type="text"
                               name="lastName"
                               value={resumeData.personalInfo.lastName}
-                              onChange={(e) => handleInputChange(e, 'personalInfo')}
+                              onChange={handlePersonalInfoChange}
                               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             />
                           </div>
@@ -350,7 +606,7 @@ const ResumeBuilder = () => {
                               type="email"
                               name="email"
                               value={resumeData.personalInfo.email}
-                              onChange={(e) => handleInputChange(e, 'personalInfo')}
+                              onChange={handlePersonalInfoChange}
                               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             />
                           </div>
@@ -360,7 +616,7 @@ const ResumeBuilder = () => {
                               type="text"
                               name="phone"
                               value={resumeData.personalInfo.phone}
-                              onChange={(e) => handleInputChange(e, 'personalInfo')}
+                              onChange={handlePersonalInfoChange}
                               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             />
                           </div>
@@ -370,7 +626,7 @@ const ResumeBuilder = () => {
                               type="text"
                               name="address"
                               value={resumeData.personalInfo.address}
-                              onChange={(e) => handleInputChange(e, 'personalInfo')}
+                              onChange={handlePersonalInfoChange}
                               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             />
                           </div>
@@ -380,7 +636,7 @@ const ResumeBuilder = () => {
                               type="text"
                               name="linkedin"
                               value={resumeData.personalInfo.linkedin}
-                              onChange={(e) => handleInputChange(e, 'personalInfo')}
+                              onChange={handlePersonalInfoChange}
                               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             />
                           </div>
@@ -390,7 +646,7 @@ const ResumeBuilder = () => {
                               type="text"
                               name="website"
                               value={resumeData.personalInfo.website}
-                              onChange={(e) => handleInputChange(e, 'personalInfo')}
+                              onChange={handlePersonalInfoChange}
                               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             />
                           </div>
@@ -404,7 +660,7 @@ const ResumeBuilder = () => {
                             rows={4}
                             name="summary"
                             value={resumeData.personalInfo.summary}
-                            onChange={(e) => handleInputChange(e, 'personalInfo')}
+                            onChange={handlePersonalInfoChange}
                             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                           />
                         </div>
@@ -430,8 +686,8 @@ const ResumeBuilder = () => {
                                   <label className="block text-sm font-medium text-gray-700">Company</label>
                                   <input
                                     type="text"
-                                    value={exp.company}
-                                    onChange={(e) => handleInputChange(e, 'experience', idx, 'company')}
+                                    value={exp.company || ''}
+                                    onChange={(e) => handleArrayItemChange('experience', idx, 'company', e.target.value)}
                                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                   />
                                 </div>
@@ -439,8 +695,8 @@ const ResumeBuilder = () => {
                                   <label className="block text-sm font-medium text-gray-700">Position</label>
                                   <input
                                     type="text"
-                                    value={exp.position}
-                                    onChange={(e) => handleInputChange(e, 'experience', idx, 'position')}
+                                    value={exp.position || ''}
+                                    onChange={(e) => handleArrayItemChange('experience', idx, 'position', e.target.value)}
                                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                   />
                                 </div>
@@ -448,8 +704,8 @@ const ResumeBuilder = () => {
                                   <label className="block text-sm font-medium text-gray-700">Start Date</label>
                                   <input
                                     type="date"
-                                    value={exp.startDate}
-                                    onChange={(e) => handleInputChange(e, 'experience', idx, 'startDate')}
+                                    value={exp.startDate || ''}
+                                    onChange={(e) => handleArrayItemChange('experience', idx, 'startDate', e.target.value)}
                                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                   />
                                 </div>
@@ -457,42 +713,45 @@ const ResumeBuilder = () => {
                                   <label className="block text-sm font-medium text-gray-700">End Date</label>
                                   <input
                                     type="date"
-                                    value={exp.endDate}
-                                    onChange={(e) => handleInputChange(e, 'experience', idx, 'endDate')}
+                                    value={exp.endDate || ''}
+                                    onChange={(e) => handleArrayItemChange('experience', idx, 'endDate', e.target.value)}
                                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                   />
+                                </div>
+                                <div className="md:col-span-2">
+                                  <label className="flex items-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={exp.isCurrent || false}
+                                      onChange={(e) => handleArrayItemChange('experience', idx, 'isCurrent', e.target.checked)}
+                                      className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                    />
+                                    <span className="ml-2 text-sm text-gray-600">Currently working here</span>
+                                  </label>
                                 </div>
                               </div>
                               <div className="mt-4">
                                 <label className="block text-sm font-medium text-gray-700">Description</label>
                                 <textarea
                                   rows={3}
-                                  value={exp.description}
-                                  onChange={(e) => handleInputChange(e, 'experience', idx, 'description')}
+                                  value={exp.description || ''}
+                                  onChange={(e) => handleArrayItemChange('experience', idx, 'description', e.target.value)}
                                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                 />
                               </div>
                               <div className="mt-4">
                                 <label className="block text-sm font-medium text-gray-700">Achievements</label>
                                 <div className="space-y-2">
-                                  {exp.achievements.map((ach, achIdx) => (
+                                  {exp.achievements && exp.achievements.map((ach, achIdx) => (
                                     <div key={achIdx} className="flex">
                                       <input
                                         type="text"
-                                        value={ach}
-                                        onChange={(e) => {
-                                          const newAchievements = [...exp.achievements];
-                                          newAchievements[achIdx] = e.target.value;
-                                          handleInputChange({ target: { value: newAchievements } }, 'experience', idx, 'achievements');
-                                        }}
+                                        value={ach || ''}
+                                        onChange={(e) => handleAchievementsChange(idx, achIdx, e.target.value)}
                                         className="flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                       />
                                       <button
-                                        onClick={() => {
-                                          const newAchievements = [...exp.achievements];
-                                          newAchievements.splice(achIdx, 1);
-                                          handleInputChange({ target: { value: newAchievements } }, 'experience', idx, 'achievements');
-                                        }}
+                                        onClick={() => removeAchievement(idx, achIdx)}
                                         className="ml-2 text-red-500 hover:text-red-700"
                                       >
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -502,10 +761,7 @@ const ResumeBuilder = () => {
                                     </div>
                                   ))}
                                   <button
-                                    onClick={() => {
-                                      const newAchievements = [...exp.achievements, ''];
-                                      handleInputChange({ target: { value: newAchievements } }, 'experience', idx, 'achievements');
-                                    }}
+                                    onClick={() => addAchievement(idx)}
                                     className="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                                   >
                                     + Add Achievement
@@ -523,15 +779,379 @@ const ResumeBuilder = () => {
                         </div>
                       )}
                       
-                      {(section.type === 'education' || section.type === 'skills' || section.type === 'certifications' || 
-                        section.type === 'projects' || section.type === 'languages') && (
-                        <div>
-                          <p className="text-sm text-gray-500">Content for {section.title} section would be here.</p>
+                      {section.type === 'education' && (
+                        <div className="space-y-4">
+                          {resumeData.education.map((edu, idx) => (
+                            <div key={idx} className="border border-gray-200 rounded-lg p-4">
+                              <div className="flex justify-between items-start mb-2">
+                                <h4 className="font-medium text-gray-900">Education #{idx + 1}</h4>
+                                <button 
+                                  onClick={() => removeArrayItem('education', idx)}
+                                  className="text-red-500 hover:text-red-700"
+                                >
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700">Institution</label>
+                                  <input
+                                    type="text"
+                                    value={edu.institution || ''}
+                                    onChange={(e) => handleArrayItemChange('education', idx, 'institution', e.target.value)}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700">Degree</label>
+                                  <input
+                                    type="text"
+                                    value={edu.degree || ''}
+                                    onChange={(e) => handleArrayItemChange('education', idx, 'degree', e.target.value)}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700">Field of Study</label>
+                                  <input
+                                    type="text"
+                                    value={edu.fieldOfStudy || ''}
+                                    onChange={(e) => handleArrayItemChange('education', idx, 'fieldOfStudy', e.target.value)}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700">Start Date</label>
+                                  <input
+                                    type="date"
+                                    value={edu.startDate || ''}
+                                    onChange={(e) => handleArrayItemChange('education', idx, 'startDate', e.target.value)}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700">End Date</label>
+                                  <input
+                                    type="date"
+                                    value={edu.endDate || ''}
+                                    onChange={(e) => handleArrayItemChange('education', idx, 'endDate', e.target.value)}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  />
+                                </div>
+                                <div className="md:col-span-2">
+                                  <label className="flex items-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={edu.isCurrent || false}
+                                      onChange={(e) => handleArrayItemChange('education', idx, 'isCurrent', e.target.checked)}
+                                      className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                    />
+                                    <span className="ml-2 text-sm text-gray-600">Currently studying here</span>
+                                  </label>
+                                </div>
+                              </div>
+                              <div className="mt-4">
+                                <label className="block text-sm font-medium text-gray-700">Description</label>
+                                <textarea
+                                  rows={2}
+                                  value={edu.description || ''}
+                                  onChange={(e) => handleArrayItemChange('education', idx, 'description', e.target.value)}
+                                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                />
+                              </div>
+                            </div>
+                          ))}
                           <button
-                            onClick={() => addArrayItem(section.type)}
-                            className="mt-2 inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                            onClick={() => addArrayItem('education')}
+                            className="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                           >
-                            + Add Item
+                            + Add Education
+                          </button>
+                        </div>
+                      )}
+                      
+                      {section.type === 'skills' && (
+                        <div className="space-y-4">
+                          {resumeData.skills.map((skill, idx) => (
+                            <div key={idx} className="border border-gray-200 rounded-lg p-4">
+                              <div className="flex justify-between items-start mb-2">
+                                <h4 className="font-medium text-gray-900">Skill #{idx + 1}</h4>
+                                <button 
+                                  onClick={() => removeArrayItem('skills', idx)}
+                                  className="text-red-500 hover:text-red-700"
+                                >
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700">Skill Name</label>
+                                  <input
+                                    type="text"
+                                    value={skill.name || ''}
+                                    onChange={(e) => handleArrayItemChange('skills', idx, 'name', e.target.value)}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700">Level</label>
+                                  <select
+                                    value={skill.level || 'Intermediate'}
+                                    onChange={(e) => handleArrayItemChange('skills', idx, 'level', e.target.value)}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  >
+                                    <option value="Beginner">Beginner</option>
+                                    <option value="Intermediate">Intermediate</option>
+                                    <option value="Advanced">Advanced</option>
+                                    <option value="Expert">Expert</option>
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          <button
+                            onClick={() => addArrayItem('skills')}
+                            className="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                          >
+                            + Add Skill
+                          </button>
+                        </div>
+                      )}
+                      
+                      {section.type === 'certifications' && (
+                        <div className="space-y-4">
+                          {resumeData.certifications.map((cert, idx) => (
+                            <div key={idx} className="border border-gray-200 rounded-lg p-4">
+                              <div className="flex justify-between items-start mb-2">
+                                <h4 className="font-medium text-gray-900">Certification #{idx + 1}</h4>
+                                <button 
+                                  onClick={() => removeArrayItem('certifications', idx)}
+                                  className="text-red-500 hover:text-red-700"
+                                >
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700">Certification Name</label>
+                                  <input
+                                    type="text"
+                                    value={cert.name || ''}
+                                    onChange={(e) => handleArrayItemChange('certifications', idx, 'name', e.target.value)}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700">Issuer</label>
+                                  <input
+                                    type="text"
+                                    value={cert.issuer || ''}
+                                    onChange={(e) => handleArrayItemChange('certifications', idx, 'issuer', e.target.value)}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700">Issue Date</label>
+                                  <input
+                                    type="date"
+                                    value={cert.date || ''}
+                                    onChange={(e) => handleArrayItemChange('certifications', idx, 'date', e.target.value)}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700">Expiration Date</label>
+                                  <input
+                                    type="date"
+                                    value={cert.expirationDate || ''}
+                                    onChange={(e) => handleArrayItemChange('certifications', idx, 'expirationDate', e.target.value)}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  />
+                                </div>
+                                <div className="md:col-span-2">
+                                  <label className="block text-sm font-medium text-gray-700">Credential ID</label>
+                                  <input
+                                    type="text"
+                                    value={cert.credentialId || ''}
+                                    onChange={(e) => handleArrayItemChange('certifications', idx, 'credentialId', e.target.value)}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  />
+                                </div>
+                                <div className="md:col-span-2">
+                                  <label className="block text-sm font-medium text-gray-700">URL</label>
+                                  <input
+                                    type="text"
+                                    value={cert.url || ''}
+                                    onChange={(e) => handleArrayItemChange('certifications', idx, 'url', e.target.value)}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          <button
+                            onClick={() => addArrayItem('certifications')}
+                            className="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                          >
+                            + Add Certification
+                          </button>
+                        </div>
+                      )}
+                      
+                      {section.type === 'projects' && (
+                        <div className="space-y-4">
+                          {resumeData.projects.map((project, idx) => (
+                            <div key={idx} className="border border-gray-200 rounded-lg p-4">
+                              <div className="flex justify-between items-start mb-2">
+                                <h4 className="font-medium text-gray-900">Project #{idx + 1}</h4>
+                                <button 
+                                  onClick={() => removeArrayItem('projects', idx)}
+                                  className="text-red-500 hover:text-red-700"
+                                >
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700">Project Name</label>
+                                  <input
+                                    type="text"
+                                    value={project.name || ''}
+                                    onChange={(e) => handleArrayItemChange('projects', idx, 'name', e.target.value)}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700">URL</label>
+                                  <input
+                                    type="text"
+                                    value={project.url || ''}
+                                    onChange={(e) => handleArrayItemChange('projects', idx, 'url', e.target.value)}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700">Start Date</label>
+                                  <input
+                                    type="date"
+                                    value={project.startDate || ''}
+                                    onChange={(e) => handleArrayItemChange('projects', idx, 'startDate', e.target.value)}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700">End Date</label>
+                                  <input
+                                    type="date"
+                                    value={project.endDate || ''}
+                                    onChange={(e) => handleArrayItemChange('projects', idx, 'endDate', e.target.value)}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  />
+                                </div>
+                              </div>
+                              <div className="mt-4">
+                                <label className="block text-sm font-medium text-gray-700">Description</label>
+                                <textarea
+                                  rows={2}
+                                  value={project.description || ''}
+                                  onChange={(e) => handleArrayItemChange('projects', idx, 'description', e.target.value)}
+                                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                />
+                              </div>
+                              <div className="mt-4">
+                                <label className="block text-sm font-medium text-gray-700">Technologies</label>
+                                <div className="space-y-2">
+                                  {project.technologies && project.technologies.map((tech, techIdx) => (
+                                    <div key={techIdx} className="flex">
+                                      <input
+                                        type="text"
+                                        value={tech || ''}
+                                        onChange={(e) => handleTechnologiesChange(idx, techIdx, e.target.value)}
+                                        className="flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                      />
+                                      <button
+                                        onClick={() => removeTechnology(idx, techIdx)}
+                                        className="ml-2 text-red-500 hover:text-red-700"
+                                      >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  ))}
+                                  <button
+                                    onClick={() => addTechnology(idx)}
+                                    className="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                                  >
+                                    + Add Technology
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          <button
+                            onClick={() => addArrayItem('projects')}
+                            className="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                          >
+                            + Add Project
+                          </button>
+                        </div>
+                      )}
+                      
+                      {section.type === 'languages' && (
+                        <div className="space-y-4">
+                          {resumeData.languages.map((lang, idx) => (
+                            <div key={idx} className="border border-gray-200 rounded-lg p-4">
+                              <div className="flex justify-between items-start mb-2">
+                                <h4 className="font-medium text-gray-900">Language #{idx + 1}</h4>
+                                <button 
+                                  onClick={() => removeArrayItem('languages', idx)}
+                                  className="text-red-500 hover:text-red-700"
+                                >
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700">Language</label>
+                                  <input
+                                    type="text"
+                                    value={lang.name || ''}
+                                    onChange={(e) => handleArrayItemChange('languages', idx, 'name', e.target.value)}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700">Proficiency</label>
+                                  <select
+                                    value={lang.proficiency || 'Fluent'}
+                                    onChange={(e) => handleArrayItemChange('languages', idx, 'proficiency', e.target.value)}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  >
+                                    <option value="Basic">Basic</option>
+                                    <option value="Conversational">Conversational</option>
+                                    <option value="Fluent">Fluent</option>
+                                    <option value="Native">Native</option>
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          <button
+                            onClick={() => addArrayItem('languages')}
+                            className="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                          >
+                            + Add Language
                           </button>
                         </div>
                       )}
@@ -567,16 +1187,7 @@ const ResumeBuilder = () => {
             <div className="lg:col-span-3">
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-lg font-medium text-gray-900 mb-4">Preview</h2>
-                <div className="border border-gray-300 rounded-lg p-8 min-h-[600px]">
-                  {/* Resume preview would be rendered here */}
-                  <div className="text-center py-12">
-                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">Resume Preview</h3>
-                    <p className="mt-1 text-sm text-gray-500">Your resume will be previewed here as you build it.</p>
-                  </div>
-                </div>
+                <ResumePreview resumeData={resumeData} />
               </div>
               
               <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -600,7 +1211,9 @@ const ResumeBuilder = () => {
                       e.preventDefault();
                       // Show dropdown menu
                       const menu = e.target.nextElementSibling;
-                      menu.classList.toggle('hidden');
+                      if (menu) {
+                        menu.classList.toggle('hidden');
+                      }
                     }}
                   >
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

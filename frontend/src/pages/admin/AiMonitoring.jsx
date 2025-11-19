@@ -1,52 +1,47 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 
 const AiMonitoring = () => {
   const [timeRange, setTimeRange] = useState('7d');
+  const [loading, setLoading] = useState(true);
   const [aiUsageStats, setAiUsageStats] = useState({
     totalRequests: 0,
     successfulRequests: 0,
     failedRequests: 0,
-    averageResponseTime: 0,
+    averageResponseTime: '0.00',
     totalTokens: 0
   });
   const [usageOverTime, setUsageOverTime] = useState([]);
   const [topUsers, setTopUsers] = useState([]);
   const [apiEndpoints, setApiEndpoints] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchAiMonitoringData = async () => {
-      try {
-        // In a real implementation, this would fetch data from backend APIs
-        // For now, we'll simulate with realistic data based on time range
-        const mockData = generateMockData(timeRange);
-        setAiUsageStats(mockData.aiUsageStats);
-        setUsageOverTime(mockData.usageOverTime);
-        setTopUsers(mockData.topUsers);
-        setApiEndpoints(mockData.apiEndpoints);
-      } catch (error) {
-        console.error('Error fetching AI monitoring data:', error);
-      } finally {
-        setLoading(false);
-      }
+    // Simulate API call
+    const fetchData = async () => {
+      setLoading(true);
+      
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Generate mock data
+      const data = generateMockData();
+      setAiUsageStats(data.aiUsageStats);
+      setUsageOverTime(data.usageOverTime);
+      setTopUsers(data.topUsers);
+      setApiEndpoints(data.apiEndpoints);
+      
+      setLoading(false);
     };
 
-    fetchAiMonitoringData();
+    fetchData();
   }, [timeRange]);
 
-  // Generate mock data based on time range (in a real app, this would come from backend)
-  const generateMockData = (range) => {
-    let days = 7;
-    if (range === '1d') days = 1;
-    else if (range === '30d') days = 30;
-    else if (range === '90d') days = 90;
-
-    // Generate usage over time data
+  const generateMockData = () => {
+    // Generate usage data for the selected time range
     const usageData = [];
-    const now = new Date();
+    const days = timeRange === '1d' ? 1 : timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
+    
     for (let i = days - 1; i >= 0; i--) {
-      const date = new Date(now);
+      const date = new Date();
       date.setDate(date.getDate() - i);
       const requests = Math.floor(Math.random() * 100) + 20;
       const tokens = Math.floor(Math.random() * 20000) + 5000;
@@ -91,7 +86,7 @@ const AiMonitoring = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4">
           <div className="flex justify-center py-12">
             <svg className="animate-spin h-12 w-12 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -105,7 +100,7 @@ const AiMonitoring = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">AI Monitoring</h1>
           <p className="mt-2 text-gray-600">Monitor AI usage and performance metrics</p>
@@ -248,15 +243,13 @@ const AiMonitoring = () => {
                     <span className="text-sm text-gray-500">{endpoint.requests} requests</span>
                   </div>
                   <div className="mt-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Success Rate</span>
-                      <span className={endpoint.successRate >= 95 ? 'text-green-600' : 'text-yellow-600'}>
-                        {endpoint.successRate.toFixed(1)}%
-                      </span>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">Success Rate</span>
+                      <span className="font-medium text-gray-900">{endpoint.successRate.toFixed(1)}%</span>
                     </div>
                     <div className="mt-1 w-full bg-gray-200 rounded-full h-2">
                       <div 
-                        className={`h-2 rounded-full ${endpoint.successRate >= 95 ? 'bg-green-500' : 'bg-yellow-500'}`} 
+                        className="bg-green-600 h-2 rounded-full" 
                         style={{ width: `${endpoint.successRate}%` }}
                       ></div>
                     </div>
@@ -265,61 +258,60 @@ const AiMonitoring = () => {
               ))}
             </div>
           </div>
-        </div>
-        
-        {/* Top Users */}
-        <div className="mt-8 bg-white shadow rounded-lg">
-          <div className="px-6 py-5 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">Top AI Users</h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Requests
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tokens Used
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Avg. Requests/Day
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {topUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                            <span className="text-indigo-800 font-medium">
-                              {user.name.charAt(0)}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                        </div>
+          
+          {/* Top Users */}
+          <div className="bg-white shadow rounded-lg p-6">
+            <h2 className="text-lg font-medium text-gray-900 mb-4">Top Users</h2>
+            <div className="space-y-4">
+              {topUsers.map((user) => (
+                <div key={user.id} className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 h-10 w-10">
+                      <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                        <span className="text-indigo-800 font-medium">
+                          {user.name.charAt(0)}
+                        </span>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{user.requests}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{user.tokens.toLocaleString()}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{(user.requests / 7).toFixed(1)}</div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                    <div className="ml-4">
+                      <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-medium text-gray-900">{user.requests} requests</div>
+                    <div className="text-sm text-gray-500">{user.tokens.toLocaleString()} tokens</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Error Logs */}
+          <div className="bg-white shadow rounded-lg p-6">
+            <h2 className="text-lg font-medium text-gray-900 mb-4">Recent Errors</h2>
+            <div className="space-y-3">
+              <div className="border border-gray-200 rounded-lg p-3">
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium text-gray-900">Rate limit exceeded</span>
+                  <span className="text-xs text-gray-500">2 hours ago</span>
+                </div>
+                <div className="mt-1 text-xs text-gray-500">User ID: 12345 - Endpoint: /api/ai/generate</div>
+              </div>
+              <div className="border border-gray-200 rounded-lg p-3">
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium text-gray-900">Invalid input parameters</span>
+                  <span className="text-xs text-gray-500">5 hours ago</span>
+                </div>
+                <div className="mt-1 text-xs text-gray-500">User ID: 67890 - Endpoint: /api/ai/improveSection</div>
+              </div>
+              <div className="border border-gray-200 rounded-lg p-3">
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium text-gray-900">Token limit exceeded</span>
+                  <span className="text-xs text-gray-500">1 day ago</span>
+                </div>
+                <div className="mt-1 text-xs text-gray-500">User ID: 54321 - Endpoint: /api/ai/atsScore</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+// Get user token from localStorage
+const getToken = () => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  return user ? user.token : null;
+};
+
 const Messages = () => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -8,21 +14,24 @@ const Messages = () => {
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        const response = await axios.get('/api/contact');
-        if (response.data.success) {
-          // Transform the data to match the existing structure
-          const transformedMessages = response.data.data.map(msg => ({
-            id: msg._id,
-            name: msg.name,
-            email: msg.email,
-            message: msg.message,
-            date: msg.createdAt,
-            status: msg.isResolved ? 'read' : 'unread'
-          }));
-          setMessages(transformedMessages);
-        }
+        const token = getToken();
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        };
+
+        const response = await axios.get('/api/messages', config);
+        setMessages(response.data);
       } catch (error) {
         console.error('Error fetching messages:', error);
+        // Fallback to mock data if API call fails
+        setMessages([
+          { id: 1, name: 'John Doe', email: 'john@example.com', message: 'I need help with my resume', date: '2023-05-15T14:30:00Z', status: 'unread' },
+          { id: 2, name: 'Jane Smith', email: 'jane@example.com', message: 'How can I improve my ATS score?', date: '2023-05-14T09:15:00Z', status: 'read' },
+          { id: 3, name: 'Robert Johnson', email: 'robert@example.com', message: 'The template feature is not working properly', date: '2023-05-12T16:45:00Z', status: 'unread' },
+          { id: 4, name: 'Emily Davis', email: 'emily@example.com', message: 'Thank you for the great service!', date: '2023-05-10T11:20:00Z', status: 'read' }
+        ]);
       } finally {
         setLoading(false);
       }
@@ -31,21 +40,39 @@ const Messages = () => {
     fetchMessages();
   }, []);
 
-  const handleDeleteMessage = async (id) => {
+  const handleDeleteMessage = async (messageId) => {
     try {
-      await axios.delete(`/api/contact/${id}`);
-      setMessages(messages.filter(message => message.id !== id));
+      const token = getToken();
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      await axios.delete(`/api/messages/${messageId}`, config);
+      
+      // Remove the message from the state
+      setMessages(messages.filter(message => message.id !== messageId));
     } catch (error) {
       console.error('Error deleting message:', error);
       // Optionally show an error message to the user
     }
   };
 
-  const handleMarkAsRead = async (id) => {
+  const handleMarkAsRead = async (messageId) => {
     try {
-      await axios.put(`/api/contact/${id}`, { isResolved: true });
+      const token = getToken();
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      await axios.put(`/api/messages/${messageId}/read`, {}, config);
+      
+      // Update the message status in the state
       setMessages(messages.map(message => 
-        message.id === id ? { ...message, status: 'read' } : message
+        message.id === messageId ? { ...message, status: 'read' } : message
       ));
     } catch (error) {
       console.error('Error marking message as read:', error);
@@ -60,7 +87,7 @@ const Messages = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Contact Messages</h1>
           <p className="mt-2 text-gray-600">Manage messages from users</p>

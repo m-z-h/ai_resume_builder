@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
@@ -11,8 +11,16 @@ const Downloads = () => {
   const [downloads, setDownloads] = useState([]);
   const [loading, setLoading] = useState(true);
   
+  // Define the feature names array as a constant to prevent re-renders
+  const downloadFeatureNames = useMemo(() => ['pdfDownload', 'odfDownload', 'docxDownload'], []);
+  
   // Check which download features are enabled
-  const featureStatus = useMultipleFeatureCheck(['pdfDownload', 'odfDownload', 'docxDownload']);
+  const featureStatus = useMultipleFeatureCheck(downloadFeatureNames);
+  
+  // Debug log to see feature status
+  useEffect(() => {
+    console.log('Downloads featureStatus:', featureStatus);
+  }, [featureStatus]);
 
   useEffect(() => {
     const fetchResumes = async () => {
@@ -77,6 +85,8 @@ const Downloads = () => {
   }, []);
 
   const handleDownload = async (resumeId, format) => {
+    console.log('Feature status:', featureStatus); // Debug log
+    
     // Check if the download feature is enabled
     let featureEnabled = false;
     switch (format) {
@@ -128,7 +138,7 @@ const Downloads = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">My Downloads</h1>
           <p className="mt-2 text-gray-600">Manage and download your resume files</p>

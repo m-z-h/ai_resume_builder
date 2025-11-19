@@ -1,52 +1,50 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+// Get user token from localStorage
+const getToken = () => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  return user ? user.token : null;
+};
+
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
-  
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const token = JSON.parse(localStorage.getItem('user'))?.token;
+        const token = getToken();
         const config = {
           headers: {
-            Authorization: `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         };
-        
+
         const response = await axios.get('/api/users', config);
         setUsers(response.data);
+        setLoading(false);
       } catch (error) {
         console.error('Error fetching users:', error);
-        // Fallback to mock data if API call fails
-        setUsers([
-          { id: 1, name: 'John Doe', email: 'john@example.com', role: 'user', status: 'active', lastActive: '2023-05-15', resumes: 3 },
-          { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'user', status: 'active', lastActive: '2023-05-14', resumes: 1 },
-          { id: 3, name: 'Robert Johnson', email: 'robert@example.com', role: 'user', status: 'blocked', lastActive: '2023-05-10', resumes: 5 },
-          { id: 4, name: 'Emily Davis', email: 'emily@example.com', role: 'admin', status: 'active', lastActive: '2023-05-16', resumes: 0 },
-          { id: 5, name: 'Michael Wilson', email: 'michael@example.com', role: 'user', status: 'inactive', lastActive: '2023-04-28', resumes: 2 }
-        ]);
-      } finally {
         setLoading(false);
       }
     };
 
     fetchUsers();
   }, []);
-  
-  const handleStatusChange = async (userId, newStatus) => {
+
+  const updateUserStatus = async (userId, newStatus) => {
     try {
-      const token = JSON.parse(localStorage.getItem('user'))?.token;
+      const token = getToken();
       const config = {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       };
-      
+
       // Determine the correct endpoint based on the action
       let endpoint = `/api/users/${userId}`;
       let data = {};
@@ -85,7 +83,7 @@ const UserManagement = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4">
           <div className="flex justify-center py-12">
             <svg className="animate-spin h-12 w-12 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -99,7 +97,7 @@ const UserManagement = () => {
   
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
           <p className="mt-2 text-gray-600">Manage all users and their account status</p>
@@ -247,21 +245,14 @@ const UserManagement = () => {
                         {/* Determine current status and show appropriate action */}
                         {(user.isActive === undefined ? user.status : (user.isActive ? 'active' : 'blocked')) === 'active' ? (
                           <button 
-                            onClick={() => handleStatusChange(user._id || user.id, 'blocked')}
+                            onClick={() => updateUserStatus(user._id || user.id, 'blocked')}
                             className="text-red-600 hover:text-red-900"
                           >
                             Block
                           </button>
-                        ) : (user.isActive === undefined ? user.status : (user.isActive ? 'active' : 'blocked')) === 'blocked' ? (
-                          <button 
-                            onClick={() => handleStatusChange(user._id || user.id, 'active')}
-                            className="text-green-600 hover:text-green-900"
-                          >
-                            Unblock
-                          </button>
                         ) : (
                           <button 
-                            onClick={() => handleStatusChange(user._id || user.id, 'active')}
+                            onClick={() => updateUserStatus(user._id || user.id, 'active')}
                             className="text-green-600 hover:text-green-900"
                           >
                             Activate
@@ -273,45 +264,6 @@ const UserManagement = () => {
                 ))}
               </tbody>
             </table>
-          </div>
-          
-          {/* Pagination */}
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-            <div className="flex-1 flex justify-between sm:hidden">
-              <a href="#" className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                Previous
-              </a>
-              <a href="#" className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                Next
-              </a>
-            </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  Showing <span className="font-medium">1</span> to <span className="font-medium">{filteredUsers.length}</span> of{' '}
-                  <span className="font-medium">{users.length}</span> results
-                </p>
-              </div>
-              <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                  <a href="#" className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                    <span className="sr-only">Previous</span>
-                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </a>
-                  <a href="#" className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-                    1
-                  </a>
-                  <a href="#" className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                    <span className="sr-only">Next</span>
-                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </a>
-                </nav>
-              </div>
-            </div>
           </div>
         </div>
       </div>

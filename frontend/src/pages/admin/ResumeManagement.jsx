@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+// Get user token from localStorage
+const getToken = () => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  return user ? user.token : null;
+};
+
 const ResumeManagement = () => {
   const [resumes, setResumes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -9,59 +15,51 @@ const ResumeManagement = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
-    total: 0,
-    pages: 1
+    totalPages: 1,
+    totalResumes: 0,
+    limit: 10
   });
 
   useEffect(() => {
-    fetchResumes();
-  }, [pagination.page, searchTerm, filterStatus]);
+    const fetchResumes = async () => {
+      try {
+        const token = getToken();
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        };
 
-  const fetchResumes = async () => {
-    try {
-      setLoading(true);
-      const token = JSON.parse(localStorage.getItem('user'))?.token;
-      const config = {
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
-        params: {
-          page: pagination.page,
-          limit: pagination.limit,
-          search: searchTerm,
-          status: filterStatus === 'all' ? undefined : filterStatus
-        }
-      };
-
-      const response = await axios.get('/api/resumes/all', config);
-      
-      if (response.data.success) {
-        setResumes(response.data.data);
+        const response = await axios.get('/api/resumes/admin', config);
+        setResumes(response.data.resumes);
         setPagination({
           ...pagination,
-          ...response.data.pagination
+          totalPages: response.data.totalPages,
+          totalResumes: response.data.totalResumes,
+          page: response.data.currentPage
         });
+      } catch (error) {
+        console.error('Error fetching resumes:', error);
+        setError('Failed to load resumes');
+        // Fallback to mock data if API call fails
+        setResumes([
+          { _id: 1, title: 'Software Engineer Resume', user: 'John Doe', createdAt: '2023-05-10', updatedAt: '2023-05-15', atsScore: 85, status: 'published' },
+          { _id: 2, title: 'Product Manager CV', user: 'Jane Smith', createdAt: '2023-05-12', updatedAt: '2023-05-14', atsScore: 72, status: 'draft' },
+          { _id: 3, title: 'Data Analyst Resume', user: 'Robert Johnson', createdAt: '2023-05-08', updatedAt: '2023-05-16', atsScore: 91, status: 'published' },
+          { _id: 4, title: 'UX Designer Portfolio', user: 'Emily Davis', createdAt: '2023-05-05', updatedAt: '2023-05-10', atsScore: 68, status: 'published' },
+          { _id: 5, title: 'Marketing Specialist Resume', user: 'Michael Wilson', createdAt: '2023-05-01', updatedAt: '2023-05-03', atsScore: 79, status: 'draft' }
+        ]);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error fetching resumes:', error);
-      setError('Failed to fetch resumes');
-      // Fallback to mock data if API call fails
-      setResumes([
-        { _id: 1, title: 'Software Engineer Resume', user: 'John Doe', createdAt: '2023-05-10', updatedAt: '2023-05-15', atsScore: 85, status: 'published' },
-        { _id: 2, title: 'Product Manager CV', user: 'Jane Smith', createdAt: '2023-05-12', updatedAt: '2023-05-14', atsScore: 72, status: 'draft' },
-        { _id: 3, title: 'Data Analyst Resume', user: 'Robert Johnson', createdAt: '2023-05-08', updatedAt: '2023-05-16', atsScore: 91, status: 'published' },
-        { _id: 4, title: 'UX Designer Portfolio', user: 'Emily Davis', createdAt: '2023-05-05', updatedAt: '2023-05-10', atsScore: 68, status: 'published' },
-        { _id: 5, title: 'Marketing Specialist Resume', user: 'Michael Wilson', createdAt: '2023-05-01', updatedAt: '2023-05-03', atsScore: 79, status: 'draft' }
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    fetchResumes();
+  }, []);
 
   const handleStatusChange = async (resumeId, newStatus) => {
     try {
-      const token = JSON.parse(localStorage.getItem('user'))?.token;
+      const token = getToken();
       const config = {
         headers: {
           Authorization: `Bearer ${token}`
@@ -97,7 +95,7 @@ const ResumeManagement = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Resume Management</h1>
           <p className="mt-2 text-gray-600">Manage all user resumes and their visibility</p>
@@ -280,14 +278,22 @@ const ResumeManagement = () => {
                 <button 
                   onClick={() => handlePageChange(pagination.page - 1)}
                   disabled={pagination.page === 1}
-                  className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${pagination.page === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                    pagination.page === 1 
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
                 >
                   Previous
                 </button>
                 <button 
                   onClick={() => handlePageChange(pagination.page + 1)}
-                  disabled={pagination.page === pagination.pages}
-                  className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${pagination.page === pagination.pages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  disabled={pagination.page === pagination.totalPages}
+                  className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                    pagination.page === pagination.totalPages 
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
                 >
                   Next
                 </button>
@@ -295,8 +301,8 @@ const ResumeManagement = () => {
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-gray-700">
-                    Showing <span className="font-medium">{(pagination.page - 1) * pagination.limit + 1}</span> to <span className="font-medium">{Math.min(pagination.page * pagination.limit, pagination.total)}</span> of{' '}
-                    <span className="font-medium">{pagination.total}</span> results
+                    Showing <span className="font-medium">{(pagination.page - 1) * pagination.limit + 1}</span> to <span className="font-medium">{Math.min(pagination.page * pagination.limit, pagination.totalResumes)}</span> of{' '}
+                    <span className="font-medium">{pagination.totalResumes}</span> results
                   </p>
                 </div>
                 <div>
@@ -304,30 +310,44 @@ const ResumeManagement = () => {
                     <button
                       onClick={() => handlePageChange(pagination.page - 1)}
                       disabled={pagination.page === 1}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 ${pagination.page === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 text-sm font-medium ${
+                        pagination.page === 1 
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                          : 'bg-white text-gray-500 hover:bg-gray-50'
+                      }`}
                     >
                       <span className="sr-only">Previous</span>
                       <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     </button>
-                    {[...Array(pagination.pages)].map((_, index) => (
-                      <button
-                        key={index + 1}
-                        onClick={() => handlePageChange(index + 1)}
-                        className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium ${
-                          pagination.page === index + 1 
-                            ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600' 
-                            : 'bg-white text-gray-700 hover:bg-gray-50'
-                        }`}
-                      >
-                        {index + 1}
-                      </button>
-                    ))}
+                    
+                    {/* Page numbers */}
+                    {[...Array(pagination.totalPages)].map((_, i) => {
+                      const pageNum = i + 1;
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                            pageNum === pagination.page
+                              ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
+                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                    
                     <button
                       onClick={() => handlePageChange(pagination.page + 1)}
-                      disabled={pagination.page === pagination.pages}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 ${pagination.page === pagination.pages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      disabled={pagination.page === pagination.totalPages}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 text-sm font-medium ${
+                        pagination.page === pagination.totalPages 
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                          : 'bg-white text-gray-500 hover:bg-gray-50'
+                      }`}
                     >
                       <span className="sr-only">Next</span>
                       <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">

@@ -5,7 +5,8 @@ import {
   createFeature,
   updateFeature,
   deleteFeature,
-  checkFeature
+  checkFeature,
+  checkMultipleFeatures
 } from '../controllers/featureController.js';
 import { protect, authorize } from '../middleware/auth.js';
 
@@ -24,5 +25,9 @@ router.route('/:name')
 // User route to check feature availability
 router.route('/check/:name')
   .get(protect, checkFeature);
+
+// User route to check multiple features at once
+router.route('/check')
+  .post(protect, checkMultipleFeatures);
 
 export default router;

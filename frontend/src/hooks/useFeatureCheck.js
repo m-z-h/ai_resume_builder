@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { checkFeature, checkFeatures } from '../store/featureSlice';
 
@@ -20,14 +20,17 @@ export const useMultipleFeatureCheck = (featureNames) => {
   const dispatch = useDispatch();
   const { features } = useSelector(state => state.features);
   
+  // Memoize the feature names array to prevent unnecessary re-renders
+  const memoizedFeatureNames = useMemo(() => featureNames, [JSON.stringify(featureNames)]);
+  
   useEffect(() => {
-    if (featureNames && featureNames.length > 0) {
-      dispatch(checkFeatures(featureNames));
+    if (memoizedFeatureNames && memoizedFeatureNames.length > 0) {
+      dispatch(checkFeatures(memoizedFeatureNames));
     }
-  }, [dispatch, featureNames]);
+  }, [dispatch, memoizedFeatureNames]);
   
   const featureStatus = {};
-  featureNames.forEach(name => {
+  memoizedFeatureNames.forEach(name => {
     const feature = features.find(f => f.featureName === name);
     featureStatus[name] = feature ? feature.isEnabled : false;
   });

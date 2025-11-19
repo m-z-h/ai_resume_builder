@@ -1,22 +1,20 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchFeatures } from '../../store/featureSlice';
 import { fetchDashboardData } from '../../store/analyticsSlice';
 
 const AdminDashboard = () => {
   const dispatch = useDispatch();
-  const { features } = useSelector(state => state.features);
-  const { dashboardData, isLoading } = useSelector(state => state.analytics);
-  
+  const { dashboardData, isLoading: loading, isError: error } = useSelector(state => state.analytics);
+
   useEffect(() => {
-    dispatch(fetchFeatures());
     dispatch(fetchDashboardData());
   }, [dispatch]);
-  
-  if (isLoading) {
+
+  // Loading state
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4">
           <div className="flex justify-center py-12">
             <svg className="animate-spin h-12 w-12 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -44,9 +42,19 @@ const AdminDashboard = () => {
     { user: 'Michael Wilson', action: 'Used AI improve', time: '3 hours ago' }
   ];
   
+  // Feature controls data - in a real implementation, this would come from the backend
+  const features = [
+    { _id: '1', featureName: 'aiResumeGenerator', isEnabled: true, allowedRoles: ['user'], dailyLimit: 5 },
+    { _id: '2', featureName: 'atsScoreChecker', isEnabled: true, allowedRoles: ['user'], dailyLimit: 10 },
+    { _id: '3', featureName: 'pdfDownload', isEnabled: true, allowedRoles: ['user'], dailyLimit: 0 },
+    { _id: '4', featureName: 'docxDownload', isEnabled: true, allowedRoles: ['user'], dailyLimit: 0 },
+    { _id: '5', featureName: 'odfDownload', isEnabled: true, allowedRoles: ['user'], dailyLimit: 0 },
+    { _id: '6', featureName: 'aiImprove', isEnabled: true, allowedRoles: ['user'], dailyLimit: 3 }
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
           <p className="mt-2 text-gray-600">Welcome to the AI Resume Builder admin panel</p>

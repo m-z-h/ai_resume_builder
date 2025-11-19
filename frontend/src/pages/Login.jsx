@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { login, clearError } from '../store/authSlice';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { login, reset } from '../store/authSlice';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -9,45 +9,54 @@ const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { loading, error } = useSelector(state => state.auth);
   
-  // Check for error message from AdminLogin
-  const locationError = location.state?.error;
-  
+  const { user, isLoading, isError, isSuccess, message } = useSelector(
+    (state) => state.auth
+  );
+
+  const [locationError, setLocationError] = useState('');
+
   useEffect(() => {
-    // Clear location state after using it
-    if (location.state) {
-      window.history.replaceState({}, document.title);
+    // Check if user is trying to access a protected route
+    const searchParams = new URLSearchParams(location.search);
+    const redirect = searchParams.get('redirect');
+    
+    if (redirect && !redirect.startsWith('/admin')) {
+      setLocationError('Please login to access that page');
     }
-  }, [location.state]);
+    
+    if (isSuccess && user) {
+      // Redirect based on user role
+      if (user.role === 'admin' || user.role === 'superadmin') {
+        navigate('/admin/dashboard');
+      } else {
+        // If there's a redirect parameter, use it
+        if (redirect && !redirect.startsWith('/admin')) {
+          navigate(redirect);
+        } else {
+          navigate('/dashboard');
+        }
+      }
+      dispatch(reset());
+    }
+  }, [user, isSuccess, navigate, dispatch, location.search]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Clear previous errors
-    dispatch(clearError());
-    
-    // Dispatch login action
-    dispatch(login({ email, password }))
-      .unwrap()
-      .then((result) => {
-        // Check user role and redirect accordingly
-        if (result.role === 'admin' || result.role === 'superadmin') {
-          // Redirect to admin dashboard
-          navigate('/admin/dashboard');
-        } else {
-          // Redirect to user dashboard
-          navigate('/dashboard');
-        }
-      })
-      .catch((err) => {
-        // Error is handled by the slice
-        console.error('Login failed:', err);
-      });
+    dispatch(login({ email, password }));
   };
 
+  // Determine error message
+  let error = '';
+  if (isError) {
+    error = message;
+  }
+
+  // Show loading state
+  const loading = isLoading;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4">
       <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-lg">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">

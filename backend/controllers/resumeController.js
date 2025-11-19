@@ -47,16 +47,27 @@ const createResume = asyncHandler(async (req, res) => {
     }
   }
 
+  // Clean up empty achievements and technologies
+  const cleanExperience = experience?.map(exp => ({
+    ...exp,
+    achievements: exp.achievements?.filter(ach => ach && ach.trim() !== '') || []
+  })) || [];
+
+  const cleanProjects = projects?.map(proj => ({
+    ...proj,
+    technologies: proj.technologies?.filter(tech => tech && tech.trim() !== '') || []
+  })) || [];
+
   const resume = new Resume({
     userId: req.user._id,
     title,
     templateId,
     personalInfo,
-    experience,
+    experience: cleanExperience,
     education,
     skills,
     certifications,
-    projects,
+    projects: cleanProjects,
     languages,
     customSections
   });
@@ -89,14 +100,25 @@ const updateResume = asyncHandler(async (req, res) => {
       }
     }
 
+    // Clean up empty achievements and technologies
+    const cleanExperience = experience?.map(exp => ({
+      ...exp,
+      achievements: exp.achievements?.filter(ach => ach && ach.trim() !== '') || []
+    })) || [];
+
+    const cleanProjects = projects?.map(proj => ({
+      ...proj,
+      technologies: proj.technologies?.filter(tech => tech && tech.trim() !== '') || []
+    })) || [];
+
     resume.title = title || resume.title;
     resume.templateId = templateId || resume.templateId;
     resume.personalInfo = personalInfo || resume.personalInfo;
-    resume.experience = experience || resume.experience;
+    resume.experience = cleanExperience || resume.experience;
     resume.education = education || resume.education;
     resume.skills = skills || resume.skills;
     resume.certifications = certifications || resume.certifications;
-    resume.projects = projects || resume.projects;
+    resume.projects = cleanProjects || resume.projects;
     resume.languages = languages || resume.languages;
     resume.customSections = customSections || resume.customSections;
     resume.isPublished = isPublished !== undefined ? isPublished : resume.isPublished;
@@ -131,16 +153,27 @@ const duplicateResume = asyncHandler(async (req, res) => {
   const originalResume = await Resume.findById(req.params.id);
   
   if (originalResume && (originalResume.userId.toString() === req.user._id.toString() || req.user.role === 'admin')) {
+    // Clean up empty achievements and technologies
+    const cleanExperience = originalResume.experience?.map(exp => ({
+      ...exp,
+      achievements: exp.achievements?.filter(ach => ach && ach.trim() !== '') || []
+    })) || [];
+
+    const cleanProjects = originalResume.projects?.map(proj => ({
+      ...proj,
+      technologies: proj.technologies?.filter(tech => tech && tech.trim() !== '') || []
+    })) || [];
+
     const duplicatedResume = new Resume({
       userId: req.user._id,
       title: `${originalResume.title} (Copy)`,
       templateId: originalResume.templateId,
       personalInfo: originalResume.personalInfo,
-      experience: originalResume.experience,
+      experience: cleanExperience,
       education: originalResume.education,
       skills: originalResume.skills,
       certifications: originalResume.certifications,
-      projects: originalResume.projects,
+      projects: cleanProjects,
       languages: originalResume.languages,
       customSections: originalResume.customSections,
       isPublished: false

@@ -18,39 +18,48 @@ const FeatureManagement = () => {
     setEditedFeature({ ...feature });
   };
   
-  const handleSave = () => {
-    dispatch(updateFeature({ 
-      name: editedFeature.featureName, 
-      featureData: {
-        isEnabled: editedFeature.isEnabled,
-        allowedRoles: editedFeature.allowedRoles,
-        dailyLimit: editedFeature.dailyLimit
-      }
-    }));
-    setEditingFeature(null);
-  };
-  
   const handleCancel = () => {
     setEditingFeature(null);
+    setEditedFeature({});
+  };
+  
+  const handleSave = async () => {
+    try {
+      await dispatch(updateFeature(editedFeature)).unwrap();
+      setEditingFeature(null);
+      setEditedFeature({});
+    } catch (error) {
+      console.error('Error updating feature:', error);
+    }
   };
   
   const handleInputChange = (field, value) => {
-    setEditedFeature({ ...editedFeature, [field]: value });
+    setEditedFeature({
+      ...editedFeature,
+      [field]: value
+    });
   };
   
   const handleRoleChange = (role, checked) => {
-    const roles = editedFeature.allowedRoles || [];
+    const currentRoles = editedFeature.allowedRoles || [];
+    let newRoles;
+    
     if (checked) {
-      setEditedFeature({ ...editedFeature, allowedRoles: [...roles, role] });
+      newRoles = [...currentRoles, role];
     } else {
-      setEditedFeature({ ...editedFeature, allowedRoles: roles.filter(r => r !== role) });
+      newRoles = currentRoles.filter(r => r !== role);
     }
+    
+    setEditedFeature({
+      ...editedFeature,
+      allowedRoles: newRoles
+    });
   };
   
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4">
           <div className="flex justify-center py-12">
             <svg className="animate-spin h-12 w-12 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -64,7 +73,7 @@ const FeatureManagement = () => {
   
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Feature Management</h1>
           <p className="mt-2 text-gray-600">Control which features are available to users</p>

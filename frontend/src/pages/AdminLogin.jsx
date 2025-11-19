@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { login, clearError } from '../store/authSlice';
+import { Link, useNavigate } from 'react-router-dom';
+import { login } from '../store/authSlice';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
@@ -13,10 +13,6 @@ const AdminLogin = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Clear previous errors
-    dispatch(clearError());
-    
-    // Dispatch login action
     dispatch(login({ email, password }))
       .unwrap()
       .then((result) => {
@@ -36,7 +32,7 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4">
       <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-lg">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">

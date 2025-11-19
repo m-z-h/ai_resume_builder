@@ -1,49 +1,113 @@
 import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchDashboardData } from '../../store/analyticsSlice';
 
 const Analytics = () => {
-  const dispatch = useDispatch();
-  const { dashboardData, isLoading } = useSelector(state => state.analytics);
-  
-  const [analyticsData, setAnalyticsData] = useState({
-    totalUsers: 0,
-    totalResumes: 0,
-    totalAtsChecks: 0,
-    totalAiUsage: 0,
-    monthlyUsers: [],
-    popularTemplates: [],
-    jobRoleTrends: []
-  });
+  const [loading, setLoading] = useState(true);
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [timeRange, setTimeRange] = useState('30d');
 
   useEffect(() => {
-    dispatch(fetchDashboardData());
-  }, [dispatch]);
-  
-  useEffect(() => {
-    if (dashboardData) {
-      setAnalyticsData(dashboardData);
+    // Simulate API call
+    const fetchData = async () => {
+      setLoading(true);
+      
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Generate mock data
+      const data = generateMockData();
+      setAnalyticsData(data);
+      
+      setLoading(false);
+    };
+
+    fetchData();
+  }, [timeRange]);
+
+  const generateMockData = () => {
+    // Generate mock analytics data
+    const totalUsers = Math.floor(Math.random() * 5000) + 2000;
+    const totalResumes = Math.floor(Math.random() * 10000) + 5000;
+    const totalAtsChecks = Math.floor(Math.random() * 8000) + 3000;
+    const totalAiUsage = Math.floor(Math.random() * 15000) + 8000;
+    
+    // Generate monthly user growth data
+    const monthlyUsers = [];
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const month = date.toLocaleString('default', { month: 'short' });
+      const users = Math.floor(Math.random() * 150) + 50;
+      monthlyUsers.push({ month, users });
     }
-  }, [dashboardData]);
+    
+    // Generate popular templates data
+    const popularTemplates = [
+      { name: 'Professional', usage: Math.floor(Math.random() * 500) + 200 },
+      { name: 'Creative', usage: Math.floor(Math.random() * 400) + 150 },
+      { name: 'Minimalist', usage: Math.floor(Math.random() * 350) + 100 },
+      { name: 'Executive', usage: Math.floor(Math.random() * 300) + 80 },
+      { name: 'Modern', usage: Math.floor(Math.random() * 250) + 50 }
+    ];
+    
+    // Generate job role trends data
+    const jobRoleTrends = [
+      { role: 'Software Engineer', count: Math.floor(Math.random() * 1000) + 500 },
+      { role: 'Product Manager', count: Math.floor(Math.random() * 800) + 400 },
+      { role: 'Data Analyst', count: Math.floor(Math.random() * 700) + 300 },
+      { role: 'UX Designer', count: Math.floor(Math.random() * 600) + 250 },
+      { role: 'Marketing Specialist', count: Math.floor(Math.random() * 500) + 200 },
+      { role: 'Sales Representative', count: Math.floor(Math.random() * 400) + 150 },
+      { role: 'HR Manager', count: Math.floor(Math.random() * 300) + 100 }
+    ];
+
+    return {
+      totalUsers: totalUsers.toLocaleString(),
+      totalResumes: totalResumes.toLocaleString(),
+      totalAtsChecks: totalAtsChecks.toLocaleString(),
+      totalAiUsage: totalAiUsage.toLocaleString(),
+      monthlyUsers,
+      popularTemplates,
+      jobRoleTrends
+    };
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
-          <p className="mt-2 text-gray-600">Platform usage statistics and trends</p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
+              <p className="mt-2 text-gray-600">Comprehensive analytics and insights</p>
+            </div>
+            <div className="flex space-x-2">
+              {['7d', '30d', '90d', '1y'].map((range) => (
+                <button
+                  key={range}
+                  onClick={() => setTimeRange(range)}
+                  className={`px-4 py-2 text-sm font-medium rounded-md ${
+                    timeRange === range
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  {range}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <svg className="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <svg className="animate-spin h-12 w-12 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
           </div>
         ) : (
           <>
-            {/* Key Metrics */}
+            {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <div className="bg-white shadow rounded-lg p-6">
                 <div className="flex items-center">
@@ -166,7 +230,7 @@ const Analytics = () => {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {analyticsData.jobRoleTrends.map((role, index) => {
-                        const percentage = Math.round((role.count / analyticsData.totalResumes) * 100);
+                        const percentage = Math.round((role.count / parseInt(analyticsData.totalResumes.replace(/,/g, ''))) * 100);
                         return (
                           <tr key={index}>
                             <td className="px-6 py-4 whitespace-nowrap">

@@ -106,11 +106,53 @@ const checkFeature = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Check multiple features for user
+// @route   POST /api/features/check
+// @access  Private
+const checkMultipleFeatures = asyncHandler(async (req, res) => {
+  const { featureNames } = req.body;
+  
+  if (!featureNames || !Array.isArray(featureNames)) {
+    res.status(400);
+    throw new Error('Invalid feature names provided');
+  }
+
+  // Find all requested features
+  const features = await FeatureControl.find({ featureName: { $in: featureNames } });
+  
+  // Create result object
+  const results = {};
+  
+  // Process each feature
+  featureNames.forEach(name => {
+    const feature = features.find(f => f.featureName === name);
+    
+    if (feature && feature.isEnabled) {
+      // Check if user role is allowed
+      if (!feature.allowedRoles || feature.allowedRoles.length === 0) {
+        // No role restrictions
+        results[name] = { isEnabled: true };
+      } else if (feature.allowedRoles.includes(req.user.role)) {
+        // User role is allowed
+        results[name] = { isEnabled: true };
+      } else {
+        // User role is not allowed
+        results[name] = { isEnabled: false, message: 'Feature not available for your role' };
+      }
+    } else {
+      results[name] = { isEnabled: false, message: 'Feature is disabled' };
+    }
+  });
+  
+  res.json(results);
+});
+
 export {
   getFeatures,
   getFeatureByName,
   createFeature,
   updateFeature,
   deleteFeature,
-  checkFeature
+  checkFeature,
+  checkMultipleFeatures
 };
