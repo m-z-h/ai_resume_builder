@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -71,6 +71,117 @@ const ResumePreview = ({ resumeData }) => {
             {resumeData.personalInfo.address && <span>{resumeData.personalInfo.address}</span>}
           </div>
         </div>
+        
+        {/* Summary */}
+        {resumeData.summary && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 border-b-2 border-gray-200 pb-2">Summary</h2>
+            <p className="text-gray-700 leading-relaxed">{resumeData.summary}</p>
+          </div>
+        )}
+        
+        {/* Experience */}
+        {resumeData.experience && resumeData.experience.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 border-b-2 border-gray-200 pb-2">Experience</h2>
+            <div className="space-y-6">
+              {resumeData.experience.map((exp, index) => (
+                <div key={index}>
+                  <div className="flex flex-wrap justify-between">
+                    <h3 className="text-xl font-bold text-gray-900">{exp.title}</h3>
+                    <p className="text-gray-600 font-medium">
+                      {exp.startDate} - {exp.endDate || 'Present'}
+                    </p>
+                  </div>
+                  <p className="text-lg text-gray-700">{exp.company}, {exp.location}</p>
+                  <p className="text-gray-700 mt-2 leading-relaxed">{exp.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Education */}
+        {resumeData.education && resumeData.education.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 border-b-2 border-gray-200 pb-2">Education</h2>
+            <div className="space-y-4">
+              {resumeData.education.map((edu, index) => (
+                <div key={index}>
+                  <div className="flex flex-wrap justify-between">
+                    <h3 className="text-xl font-bold text-gray-900">{edu.degree}</h3>
+                    <p className="text-gray-600 font-medium">
+                      {edu.startDate} - {edu.endDate}
+                    </p>
+                  </div>
+                  <p className="text-lg text-gray-700">{edu.school}, {edu.location}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Skills */}
+        {resumeData.skills && resumeData.skills.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 border-b-2 border-gray-200 pb-2">Skills</h2>
+            <div className="flex flex-wrap gap-2">
+              {resumeData.skills.map((skill, index) => (
+                <span key={index} className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-medium">
+                  {skill}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Projects */}
+        {resumeData.projects && resumeData.projects.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 border-b-2 border-gray-200 pb-2">Projects</h2>
+            <div className="space-y-4">
+              {resumeData.projects.map((project, index) => (
+                <div key={index}>
+                  <div className="flex flex-wrap justify-between">
+                    <h3 className="text-xl font-bold text-gray-900">{project.name}</h3>
+                    {project.link && (
+                      <a href={project.link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-800 underline">
+                        View Project
+                      </a>
+                    )}
+                  </div>
+                  <p className="text-gray-700 font-medium">{project.technologies}</p>
+                  <p className="text-gray-700 mt-2 leading-relaxed">{project.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Certifications */}
+        {resumeData.certifications && resumeData.certifications.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 border-b-2 border-gray-200 pb-2">Certifications</h2>
+            <div className="space-y-4">
+              {resumeData.certifications.map((cert, index) => (
+                <div key={index} className="flex flex-wrap justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">{cert.name}</h3>
+                    <p className="text-lg text-gray-700">{cert.issuer}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-gray-600 font-medium">{cert.date}</p>
+                    {cert.link && (
+                      <a href={cert.link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-800 underline text-sm">
+                        Verify
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -104,7 +215,10 @@ const ResumeBuilder = () => {
   });
   
   const [activeSection, setActiveSection] = useState('personal');
-  const [showPreview, setShowPreview] = useState(false);
+  // Removed showPreview state since preview is always visible
+  
+  // Debounce timer ref for real-time saving
+  const saveTimerRef = useRef(null);
   
   // Check feature limits
   const { hasFeatureAccess, featureLoading } = useMultipleFeatureCheck([
@@ -130,6 +244,31 @@ const ResumeBuilder = () => {
       setResumeData(currentResume);
     }
   }, [currentResume]);
+  
+  // Auto-save when resumeData changes (debounced)
+  useEffect(() => {
+    if (!id && (!resumeData.title || resumeData.title.trim() === '')) {
+      // Don't auto-save untitled resumes
+      return;
+    }
+    
+    // Clear previous timer
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+    }
+    
+    // Set new timer
+    saveTimerRef.current = setTimeout(() => {
+      saveResume();
+    }, 2000); // Save 2 seconds after user stops typing
+    
+    // Cleanup function
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+      }
+    };
+  }, [resumeData]);
   
   // Handle input changes
   const handleInputChange = (section, field, value) => {
@@ -273,16 +412,7 @@ const ResumeBuilder = () => {
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <button
-                onClick={() => setShowPreview(!showPreview)}
-                className="inline-flex items-center px-4 py-3 border border-transparent text-base font-bold rounded-xl shadow-sm text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300"
-              >
-                <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                {showPreview ? 'Hide Preview' : 'Show Preview'}
-              </button>
+              {/* Removed Show Preview button since preview is always visible */}
               <button
                 onClick={saveResume}
                 className="inline-flex items-center px-4 py-3 border border-transparent text-base font-bold rounded-xl shadow-sm text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300"
@@ -297,7 +427,7 @@ const ResumeBuilder = () => {
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Form Sections */}
-            <div className={`lg:col-span-8 ${showPreview ? 'lg:col-span-8' : 'lg:col-span-12'}`}>
+            <div className="lg:col-span-8">
               <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
                 <div className="flex flex-wrap gap-2 mb-6">
                   {[
@@ -1025,68 +1155,59 @@ const ResumeBuilder = () => {
               </div>
             </div>
             
-            {/* Preview Section */}
-            {showPreview && (
-              <div className="lg:col-span-4">
-                <div className="sticky top-8">
-                  <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
-                    <div className="flex justify-between items-center mb-6">
-                      <h2 className="text-2xl font-bold text-gray-900">Preview</h2>
+            {/* Preview Section - Always visible */}
+            <div className="lg:col-span-4">
+              <div className="sticky top-8">
+                <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900">Preview</h2>
+                    {/* Removed close button since preview is always visible */}
+                  </div>
+                  
+                  <div className="mb-6">
+                    <ResumePreview resumeData={resumeData} />
+                  </div>
+                  
+                  <div className="border-t border-gray-200 pt-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">Download Options</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <button
-                        onClick={() => setShowPreview(false)}
-                        className="text-gray-400 hover:text-gray-600 transition-colors duration-150"
+                        onClick={() => downloadResume('pdf')}
+                        disabled={!hasFeatureAccess('pdfDownload')}
+                        className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-base font-bold rounded-xl shadow-sm text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300 disabled:opacity-50"
                       >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                         </svg>
+                        PDF
                       </button>
-                    </div>
-                    
-                    <div className="mb-6">
-                      <ResumePreview resumeData={resumeData} />
-                    </div>
-                    
-                    <div className="border-t border-gray-200 pt-6">
-                      <h3 className="text-lg font-bold text-gray-900 mb-4">Download Options</h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <button
-                          onClick={() => downloadResume('pdf')}
-                          disabled={!hasFeatureAccess('pdfDownload')}
-                          className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-base font-bold rounded-xl shadow-sm text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300 disabled:opacity-50"
-                        >
-                          <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                          </svg>
-                          PDF
-                        </button>
-                        
-                        <button
-                          onClick={() => downloadResume('docx')}
-                          disabled={!hasFeatureAccess('docxDownload')}
-                          className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-base font-bold rounded-xl shadow-sm text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 disabled:opacity-50"
-                        >
-                          <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          DOCX
-                        </button>
-                        
-                        <button
-                          onClick={() => downloadResume('odf')}
-                          disabled={!hasFeatureAccess('odfDownload')}
-                          className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-base font-bold rounded-xl shadow-sm text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 disabled:opacity-50"
-                        >
-                          <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          ODF
-                        </button>
-                      </div>
+                      
+                      <button
+                        onClick={() => downloadResume('docx')}
+                        disabled={!hasFeatureAccess('docxDownload')}
+                        className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-base font-bold rounded-xl shadow-sm text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 disabled:opacity-50"
+                      >
+                        <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        DOCX
+                      </button>
+                      
+                      <button
+                        onClick={() => downloadResume('odf')}
+                        disabled={!hasFeatureAccess('odfDownload')}
+                        className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-base font-bold rounded-xl shadow-sm text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 disabled:opacity-50"
+                      >
+                        <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        ODF
+                      </button>
                     </div>
                   </div>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>

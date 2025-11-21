@@ -15,17 +15,21 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@openrouter/sdk": "^0.1.23",
     "axios": "^1.6.7",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
+    "docxtemplater": "^3.67.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "express-async-handler": "^1.2.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
+    "jszip": "^3.10.1",
     "mongoose": "^8.20.0",
     "morgan": "^1.10.1",
     "pdfkit": "^0.17.2",
+    "pizzip": "^3.2.0",
     "puppeteer": "^24.30.0"
   },
   "devDependencies": {

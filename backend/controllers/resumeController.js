@@ -2,6 +2,18 @@ import Resume from '../models/Resume.js';
 import Template from '../models/Template.js';
 import User from '../models/User.js';
 import asyncHandler from 'express-async-handler';
+import PDFDocument from 'pdfkit';
+import { createWriteStream } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+// For DOCX generation
+import PizZip from 'pizzip';
+import Docxtemplater from 'docxtemplater';
+
+// Get the directory name for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // @desc    Get all resumes for logged in user
 // @route   GET /api/resumes
@@ -203,11 +215,111 @@ const downloadResumePdf = asyncHandler(async (req, res) => {
   const resume = await Resume.findById(req.params.id);
   
   if (resume && (resume.userId.toString() === req.user._id.toString() || req.user.role === 'admin')) {
-    // In a real implementation, this would generate and return a PDF file
-    // For now, we'll simulate the response
+    // Create a new PDF document
+    const doc = new PDFDocument();
+    
+    // Set response headers
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${resume.title}.pdf"`);
-    res.send(`PDF content for ${resume.title}`);
+    res.setHeader('Content-Disposition', `attachment; filename="${resume.title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf"`);
+    
+    // Pipe the PDF to the response
+    doc.pipe(res);
+    
+    // Add content to the PDF
+    doc.fontSize(24).text(resume.title, { align: 'center' });
+    doc.moveDown();
+    
+    // Personal Info
+    if (resume.personalInfo) {
+      const { firstName, lastName, email, phone, address, linkedin, website } = resume.personalInfo;
+      const personalInfoText = [
+        `${firstName} ${lastName}`.trim(),
+        email,
+        phone,
+        address,
+        linkedin,
+        website
+      ].filter(info => info).join(' | ');
+      
+      doc.fontSize(12).text(personalInfoText, { align: 'center' });
+      doc.moveDown(2);
+    }
+    
+    // Summary
+    if (resume.summary) {
+      doc.fontSize(16).text('Summary', { underline: true });
+      doc.fontSize(12).text(resume.summary);
+      doc.moveDown();
+    }
+    
+    // Experience
+    if (resume.experience && resume.experience.length > 0) {
+      doc.fontSize(16).text('Experience', { underline: true });
+      resume.experience.forEach(exp => {
+        doc.fontSize(14).text(exp.title);
+        doc.fontSize(12).text(`${exp.company}, ${exp.location}`);
+        doc.text(`${exp.startDate} - ${exp.endDate || 'Present'}`);
+        if (exp.description) {
+          doc.text(exp.description, { indent: 20 });
+        }
+        doc.moveDown();
+      });
+    }
+    
+    // Education
+    if (resume.education && resume.education.length > 0) {
+      doc.fontSize(16).text('Education', { underline: true });
+      resume.education.forEach(edu => {
+        doc.fontSize(14).text(edu.degree);
+        doc.fontSize(12).text(`${edu.school}, ${edu.location}`);
+        doc.text(`${edu.startDate} - ${edu.endDate}`);
+        doc.moveDown();
+      });
+    }
+    
+    // Skills
+    if (resume.skills && resume.skills.length > 0) {
+      doc.fontSize(16).text('Skills', { underline: true });
+      doc.fontSize(12).text(resume.skills.join(', '));
+      doc.moveDown();
+    }
+    
+    // Projects
+    if (resume.projects && resume.projects.length > 0) {
+      doc.fontSize(16).text('Projects', { underline: true });
+      resume.projects.forEach(project => {
+        doc.fontSize(14).text(project.name);
+        if (project.technologies) {
+          doc.fontSize(12).text(project.technologies);
+        }
+        if (project.description) {
+          doc.text(project.description, { indent: 20 });
+        }
+        if (project.link) {
+          doc.text(`Link: ${project.link}`);
+        }
+        doc.moveDown();
+      });
+    }
+    
+    // Certifications
+    if (resume.certifications && resume.certifications.length > 0) {
+      doc.fontSize(16).text('Certifications', { underline: true });
+      resume.certifications.forEach(cert => {
+        doc.fontSize(14).text(cert.name);
+        doc.fontSize(12).text(cert.issuer);
+        if (cert.date) {
+          doc.text(cert.date);
+        }
+        if (cert.link) {
+          doc.text(`Link: ${cert.link}`);
+        }
+        doc.moveDown();
+      });
+    }
+    
+    // Finalize the PDF
+    doc.end();
   } else {
     res.status(404);
     throw new Error('Resume not found');
@@ -221,11 +333,49 @@ const downloadResumeOdf = asyncHandler(async (req, res) => {
   const resume = await Resume.findById(req.params.id);
   
   if (resume && (resume.userId.toString() === req.user._id.toString() || req.user.role === 'admin')) {
-    // In a real implementation, this would generate and return an ODF file
-    // For now, we'll simulate the response
+    // For now, we'll generate a simple text representation
+    // In a real implementation, you would use a library like odfjs or generate an actual ODF file
+    const content = `
+${resume.title}
+
+${resume.personalInfo ? [
+  `${resume.personalInfo.firstName} ${resume.personalInfo.lastName}`.trim(),
+  resume.personalInfo.email,
+  resume.personalInfo.phone,
+  resume.personalInfo.address,
+  resume.personalInfo.linkedin,
+  resume.personalInfo.website
+].filter(info => info).join(' | ') : ''}
+
+${resume.summary ? `Summary:\n${resume.summary}\n` : ''}
+
+${resume.experience && resume.experience.length > 0 ? 
+  `Experience:\n${resume.experience.map(exp => 
+    `${exp.title}\n${exp.company}, ${exp.location}\n${exp.startDate} - ${exp.endDate || 'Present'}\n${exp.description || ''}`
+  ).join('\n\n')}\n` : ''}
+
+${resume.education && resume.education.length > 0 ? 
+  `Education:\n${resume.education.map(edu => 
+    `${edu.degree}\n${edu.school}, ${edu.location}\n${edu.startDate} - ${edu.endDate}`
+  ).join('\n\n')}\n` : ''}
+
+${resume.skills && resume.skills.length > 0 ? 
+  `Skills:\n${resume.skills.join(', ')}\n` : ''}
+
+${resume.projects && resume.projects.length > 0 ? 
+  `Projects:\n${resume.projects.map(project => 
+    `${project.name}\n${project.technologies || ''}\n${project.description || ''}\n${project.link || ''}`
+  ).join('\n\n')}\n` : ''}
+
+${resume.certifications && resume.certifications.length > 0 ? 
+  `Certifications:\n${resume.certifications.map(cert => 
+    `${cert.name}\n${cert.issuer}\n${cert.date || ''}\n${cert.link || ''}`
+  ).join('\n\n')}\n` : ''}
+    `.trim();
+
     res.setHeader('Content-Type', 'application/vnd.oasis.opendocument.text');
-    res.setHeader('Content-Disposition', `attachment; filename="${resume.title}.odt"`);
-    res.send(`ODF content for ${resume.title}`);
+    res.setHeader('Content-Disposition', `attachment; filename="${resume.title.replace(/[^a-zA-Z0-9]/g, '_')}.odt"`);
+    res.send(content);
   } else {
     res.status(404);
     throw new Error('Resume not found');
@@ -239,11 +389,299 @@ const downloadResumeDocx = asyncHandler(async (req, res) => {
   const resume = await Resume.findById(req.params.id);
   
   if (resume && (resume.userId.toString() === req.user._id.toString() || req.user.role === 'admin')) {
-    // In a real implementation, this would generate and return a DOCX file
-    // For now, we'll simulate the response
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    res.setHeader('Content-Disposition', `attachment; filename="${resume.title}.docx"`);
-    res.send(`DOCX content for ${resume.title}`);
+    // Create a simple DOCX document
+    try {
+      // Create a basic DOCX structure
+      const docxContent = `
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p>
+      <w:pPr>
+        <w:jc w:val="center"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+          <w:sz w:val="48"/>
+        </w:rPr>
+        <w:t>${resume.title}</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:br/>
+      </w:r>
+    </w:p>
+    ${resume.personalInfo ? `
+    <w:p>
+      <w:pPr>
+        <w:jc w:val="center"/>
+      </w:pPr>
+      <w:r>
+        <w:t>${[
+          `${resume.personalInfo.firstName} ${resume.personalInfo.lastName}`.trim(),
+          resume.personalInfo.email,
+          resume.personalInfo.phone,
+          resume.personalInfo.address,
+          resume.personalInfo.linkedin,
+          resume.personalInfo.website
+        ].filter(info => info).join(' | ')}</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:br/>
+      </w:r>
+    </w:p>` : ''}
+    ${resume.summary ? `
+    <w:p>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+          <w:sz w:val="24"/>
+        </w:rPr>
+        <w:t>Summary</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>${resume.summary}</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:br/>
+      </w:r>
+    </w:p>` : ''}
+    ${resume.experience && resume.experience.length > 0 ? `
+    <w:p>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+          <w:sz w:val="24"/>
+        </w:rPr>
+        <w:t>Experience</w:t>
+      </w:r>
+    </w:p>
+    ${resume.experience.map(exp => `
+    <w:p>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+        </w:rPr>
+        <w:t>${exp.title}</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>${exp.company}, ${exp.location}</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>${exp.startDate} - ${exp.endDate || 'Present'}</w:t>
+      </w:r>
+    </w:p>
+    ${exp.description ? `
+    <w:p>
+      <w:r>
+        <w:t>${exp.description}</w:t>
+      </w:r>
+    </w:p>` : ''}
+    <w:p>
+      <w:r>
+        <w:br/>
+      </w:r>
+    </w:p>`).join('')}` : ''}
+    ${resume.education && resume.education.length > 0 ? `
+    <w:p>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+          <w:sz w:val="24"/>
+        </w:rPr>
+        <w:t>Education</w:t>
+      </w:r>
+    </w:p>
+    ${resume.education.map(edu => `
+    <w:p>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+        </w:rPr>
+        <w:t>${edu.degree}</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>${edu.school}, ${edu.location}</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>${edu.startDate} - ${edu.endDate}</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:br/>
+      </w:r>
+    </w:p>`).join('')}` : ''}
+    ${resume.skills && resume.skills.length > 0 ? `
+    <w:p>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+          <w:sz w:val="24"/>
+        </w:rPr>
+        <w:t>Skills</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>${resume.skills.join(', ')}</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:br/>
+      </w:r>
+    </w:p>` : ''}
+    ${resume.projects && resume.projects.length > 0 ? `
+    <w:p>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+          <w:sz w:val="24"/>
+        </w:rPr>
+        <w:t>Projects</w:t>
+      </w:r>
+    </w:p>
+    ${resume.projects.map(project => `
+    <w:p>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+        </w:rPr>
+        <w:t>${project.name}</w:t>
+      </w:r>
+    </w:p>
+    ${project.technologies ? `
+    <w:p>
+      <w:r>
+        <w:t>${project.technologies}</w:t>
+      </w:r>
+    </w:p>` : ''}
+    ${project.description ? `
+    <w:p>
+      <w:r>
+        <w:t>${project.description}</w:t>
+      </w:r>
+    </w:p>` : ''}
+    ${project.link ? `
+    <w:p>
+      <w:r>
+        <w:t>Link: ${project.link}</w:t>
+      </w:r>
+    </w:p>` : ''}
+    <w:p>
+      <w:r>
+        <w:br/>
+      </w:r>
+    </w:p>`).join('')}` : ''}
+    ${resume.certifications && resume.certifications.length > 0 ? `
+    <w:p>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+          <w:sz w:val="24"/>
+        </w:rPr>
+        <w:t>Certifications</w:t>
+      </w:r>
+    </w:p>
+    ${resume.certifications.map(cert => `
+    <w:p>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+        </w:rPr>
+        <w:t>${cert.name}</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>${cert.issuer}</w:t>
+      </w:r>
+    </w:p>
+    ${cert.date ? `
+    <w:p>
+      <w:r>
+        <w:t>${cert.date}</w:t>
+      </w:r>
+    </w:p>` : ''}
+    ${cert.link ? `
+    <w:p>
+      <w:r>
+        <w:t>Link: ${cert.link}</w:t>
+      </w:r>
+    </w:p>` : ''}
+    <w:p>
+      <w:r>
+        <w:br/>
+      </w:r>
+    </w:p>`).join('')}` : ''}
+  </w:body>
+</w:document>`;
+
+      // Create a simple ZIP structure for DOCX
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.setHeader('Content-Disposition', `attachment; filename="${resume.title.replace(/[^a-zA-Z0-9]/g, '_')}.docx"`);
+      res.send(docxContent);
+    } catch (error) {
+      // Fallback to text representation if DOCX generation fails
+      const content = `
+${resume.title}
+
+${resume.personalInfo ? [
+  `${resume.personalInfo.firstName} ${resume.personalInfo.lastName}`.trim(),
+  resume.personalInfo.email,
+  resume.personalInfo.phone,
+  resume.personalInfo.address,
+  resume.personalInfo.linkedin,
+  resume.personalInfo.website
+].filter(info => info).join(' | ') : ''}
+
+${resume.summary ? `Summary:\n${resume.summary}\n` : ''}
+
+${resume.experience && resume.experience.length > 0 ? 
+  `Experience:\n${resume.experience.map(exp => 
+    `${exp.title}\n${exp.company}, ${exp.location}\n${exp.startDate} - ${exp.endDate || 'Present'}\n${exp.description || ''}`
+  ).join('\n\n')}\n` : ''}
+
+${resume.education && resume.education.length > 0 ? 
+  `Education:\n${resume.education.map(edu => 
+    `${edu.degree}\n${edu.school}, ${edu.location}\n${edu.startDate} - ${edu.endDate}`
+  ).join('\n\n')}\n` : ''}
+
+${resume.skills && resume.skills.length > 0 ? 
+  `Skills:\n${resume.skills.join(', ')}\n` : ''}
+
+${resume.projects && resume.projects.length > 0 ? 
+  `Projects:\n${resume.projects.map(project => 
+    `${project.name}\n${project.technologies || ''}\n${project.description || ''}\n${project.link || ''}`
+  ).join('\n\n')}\n` : ''}
+
+${resume.certifications && resume.certifications.length > 0 ? 
+  `Certifications:\n${resume.certifications.map(cert => 
+    `${cert.name}\n${cert.issuer}\n${cert.date || ''}\n${cert.link || ''}`
+  ).join('\n\n')}\n` : ''}
+      `.trim();
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.setHeader('Content-Disposition', `attachment; filename="${resume.title.replace(/[^a-zA-Z0-9]/g, '_')}.docx"`);
+      res.send(content);
+    }
   } else {
     res.status(404);
     throw new Error('Resume not found');

@@ -9,53 +9,126 @@ const generateAtsScore = asyncHandler(async (req, res) => {
     const { resumeId, resumeContent } = req.body;
     const userId = req.user.id;
     
-    // In a real implementation, this would analyze the resume content
-    // For now, we'll generate mock data with some logic based on resume content
-    const mockAtsReport = {
-      resume: resumeId,
-      user: userId,
-      overallScore: Math.floor(Math.random() * 40) + 60, // Random score between 60-100
-      keywordMatch: {
-        score: Math.floor(Math.random() * 30) + 70, // Random score between 70-100
-        matchedKeywords: ["JavaScript", "React", "Node.js"],
-        missingKeywords: ["TypeScript", "AWS", "Docker"]
+    // Check if Groq API key is configured
+    if (!process.env.GROQ_API_KEY) {
+      return res.status(400).json({
+        success: false,
+        message: 'Groq API key not configured'
+      });
+    }
+    
+    // Prepare prompt for Groq
+    const prompt = `Analyze the following resume content and provide an ATS (Applicant Tracking System) score with detailed feedback:
+    
+    Resume Content:
+    ${JSON.stringify(resumeContent, null, 2)}
+    
+    Please provide a comprehensive ATS analysis including:
+    1. Overall ATS score (0-100)
+    2. Keyword match analysis with matched and missing keywords
+    3. Formatting assessment with issues and suggestions
+    4. Action verbs evaluation with suggestions for stronger verbs
+    5. Skill analysis for both hard and soft skills
+    6. Length check and recommendations
+    7. Identification of weak sentences with improvement suggestions
+    8. Detailed feedback summary
+    
+    Format the response as valid JSON with the following structure:
+    {
+      "overallScore": 85,
+      "keywordMatch": {
+        "score": 90,
+        "matchedKeywords": ["Keyword 1", "Keyword 2"],
+        "missingKeywords": ["Keyword 3", "Keyword 4"]
       },
-      formatting: {
-        score: Math.floor(Math.random() * 30) + 70, // Random score between 70-100
-        issues: ["Inconsistent bullet points", "Missing metrics"],
-        suggestions: ["Standardize bullet points", "Add quantifiable metrics"]
+      "formatting": {
+        "score": 80,
+        "issues": ["Issue 1", "Issue 2"],
+        "suggestions": ["Suggestion 1", "Suggestion 2"]
       },
-      actionVerbs: {
-        score: Math.floor(Math.random() * 30) + 70, // Random score between 70-100
-        usedVerbs: ["managed", "developed"],
-        suggestedVerbs: ["orchestrated", "pioneered", "optimized"]
+      "actionVerbs": {
+        "score": 75,
+        "usedVerbs": ["Verb 1", "Verb 2"],
+        "suggestedVerbs": ["Verb 3", "Verb 4"]
       },
-      skillAnalysis: {
-        hardSkills: {
-          score: Math.floor(Math.random() * 20) + 80, // Random score between 80-100
-          identified: ["JavaScript", "React", "Node.js", "MongoDB"]
+      "skillAnalysis": {
+        "hardSkills": {
+          "score": 88,
+          "identified": ["Skill 1", "Skill 2"]
         },
-        softSkills: {
-          score: Math.floor(Math.random() * 30) + 70, // Random score between 70-100
-          identified: ["Leadership", "Communication"]
+        "softSkills": {
+          "score": 70,
+          "identified": ["Skill 3", "Skill 4"]
         }
       },
-      lengthCheck: {
-        score: 95,
-        currentPageCount: 1,
-        recommendedPageCount: 1
+      "lengthCheck": {
+        "score": 95,
+        "currentPageCount": 1,
+        "recommendedPageCount": 1
       },
-      weakSentences: [
+      "weakSentences": [
         {
-          sentence: "Responsible for development tasks",
-          suggestions: ["Add specific technologies", "Include measurable outcomes"]
+          "sentence": "Weak sentence example",
+          "suggestions": ["Suggestion 1", "Suggestion 2"]
         }
       ],
-      detailedFeedback: "Your resume is well-structured and includes relevant keywords. To improve further, add more quantifiable metrics and include the missing technical keywords."
+      "detailedFeedback": "Detailed feedback summary"
+    }`;
+    
+    // Call Groq API
+    const response = await axios.post(
+      'https://openrouter.ai/api/v1/chat/completions',
+      {
+        model: 'meta-llama/llama-3.1-8b-instruct:free',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert in ATS (Applicant Tracking Systems) and resume optimization. Provide detailed, accurate ATS analysis with actionable feedback.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 2000
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'http://localhost:5173',
+          'X-Title': 'AI Resume Builder'
+        }
+      }
+    );
+    
+    // Parse the AI response
+    const aiContent = response.data.choices[0].message.content;
+    let parsedContent;
+    
+    try {
+      // Try to parse as JSON directly
+      parsedContent = JSON.parse(aiContent);
+    } catch (parseError) {
+      // If direct parsing fails, try to extract JSON from markdown code blocks
+      const jsonMatch = aiContent.match(/```(?:json)?\s*({.*?})\s*```/s);
+      if (jsonMatch) {
+        parsedContent = JSON.parse(jsonMatch[1]);
+      } else {
+        throw new Error('Could not parse AI response as JSON');
+      }
+    }
+    
+    // Create the ATS report with the AI-generated content
+    const atsReportData = {
+      resume: resumeId,
+      user: userId,
+      ...parsedContent
     };
     
     // Save the ATS report to database
-    const atsReport = new AtsReport(mockAtsReport);
+    const atsReport = new AtsReport(atsReportData);
     const savedReport = await atsReport.save();
     
     res.json({

@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@openrouter/sdk": "^0.1.23",
     "@reduxjs/toolkit": "^2.10.1",
     "axios": "^1.13.2",
     "caniuse-lite": "^1.0.30001756",

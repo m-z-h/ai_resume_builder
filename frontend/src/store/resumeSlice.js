@@ -169,6 +169,18 @@ export const downloadResumePdf = createAsyncThunk(
         responseType: 'blob'
       };
       const response = await axios.get(`${API_URL}/${resumeId}/download/pdf`, config);
+      
+      // Create a blob URL and trigger download
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `resume-${resumeId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
       return response.data;
     } catch (error) {
       const message =
@@ -193,6 +205,18 @@ export const downloadResumeOdf = createAsyncThunk(
         responseType: 'blob'
       };
       const response = await axios.get(`${API_URL}/${resumeId}/download/odf`, config);
+      
+      // Create a blob URL and trigger download
+      const blob = new Blob([response.data], { type: 'application/vnd.oasis.opendocument.text' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `resume-${resumeId}.odt`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
       return response.data;
     } catch (error) {
       const message =
@@ -217,6 +241,18 @@ export const downloadResumeDocx = createAsyncThunk(
         responseType: 'blob'
       };
       const response = await axios.get(`${API_URL}/${resumeId}/download/docx`, config);
+      
+      // Create a blob URL and trigger download
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `resume-${resumeId}.docx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
       return response.data;
     } catch (error) {
       const message =
