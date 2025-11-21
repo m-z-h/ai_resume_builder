@@ -87,6 +87,16 @@ const Dashboard = () => {
             <p className="text-gray-500">Build a new resume from scratch</p>
           </Link>
 
+          <Link to="/resume/step-builder" className="bg-white shadow-xl rounded-2xl p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col items-center text-center group border border-gray-100">
+            <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl flex items-center justify-center mb-4 group-hover:from-purple-200 group-hover:to-pink-200 transition-colors duration-300 shadow-md">
+              <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Step-by-Step Builder</h3>
+            <p className="text-gray-500">Create resume with AI assistance</p>
+          </Link>
+
           <Link to="/ats-checker" className="bg-white shadow-xl rounded-2xl p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col items-center text-center group border border-gray-100">
             <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-teal-100 rounded-2xl flex items-center justify-center mb-4 group-hover:from-green-200 group-hover:to-teal-200 transition-colors duration-300 shadow-md">
               <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -155,7 +165,7 @@ const Dashboard = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {resumes.slice(0, 5).map((resume) => (
-                      <tr key={resume.id} className="hover:bg-gray-50 transition-colors duration-150">
+                      <tr key={resume._id} className="hover:bg-gray-50 transition-colors duration-150">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">{resume.title}</div>
                         </td>
@@ -174,11 +184,11 @@ const Dashboard = () => {
                             ${resume.atsScore >= 80 ? 'bg-green-100 text-green-800' : 
                               resume.atsScore >= 60 ? 'bg-yellow-100 text-yellow-800' : 
                               'bg-red-100 text-red-800'}`}>
-                            {resume.atsScore}/100
+                            {resume.atsScore || 0}/100
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <Link to={`/resume/builder/${resume.id}`} className="text-indigo-600 hover:text-indigo-900 font-medium transition-colors duration-150 hover:underline">
+                          <Link to={`/resume/builder/${resume._id}`} className="text-indigo-600 hover:text-indigo-900 font-medium transition-colors duration-150 hover:underline">
                             Edit
                           </Link>
                         </td>

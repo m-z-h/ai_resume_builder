@@ -4,7 +4,10 @@ import {
   improveSection,
   generateAtsScore,
   rewriteForJobDescription,
-  extractKeywords
+  extractKeywords,
+  generateSummary,
+  generateExperienceDescription,
+  generateProjectDescription
 } from '../controllers/aiController.js';
 import { protect } from '../middleware/auth.js';
 
@@ -25,5 +28,14 @@ router.route('/rewriteJobSpecific')
 
 router.route('/keywordExtract')
   .post(protect, extractKeywords);
+
+router.route('/generateSummary')
+  .post(protect, generateSummary);
+
+router.route('/generateExperienceDescription')
+  .post(protect, generateExperienceDescription);
+
+router.route('/generateProjectDescription')
+  .post(protect, generateProjectDescription);
 
 export default router;

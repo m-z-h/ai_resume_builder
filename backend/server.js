@@ -26,7 +26,12 @@ const app = express();
 // Middleware
 app.use(helmet()); // Security headers
 app.use(cors()); // Enable CORS
-app.use(morgan('combined')); // Logging
+// Use minimal logging in production, more detailed in development
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('combined')); // Detailed logging in development
+} else {
+  app.use(morgan('tiny')); // Minimal logging in production
+}
 app.use(express.json({ limit: '10mb' })); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true, limit: '10mb' })); // Parse URL-encoded bodies
 

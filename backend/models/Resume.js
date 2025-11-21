@@ -43,13 +43,10 @@ const resumeSchema = new mongoose.Schema({
     endDate: Date,
     description: String
   }],
-  skills: [{
-    name: String,
-    level: {
-      type: String,
-      enum: ['Beginner', 'Intermediate', 'Advanced', 'Expert']
-    }
-  }],
+  skills: {
+    type: [mongoose.Schema.Types.Mixed],
+    default: []
+  },
   certifications: [{
     name: String,
     issuer: String,
@@ -89,6 +86,24 @@ const resumeSchema = new mongoose.Schema({
   isPublished: {
     type: Boolean,
     default: false
+  },
+  // Section-wise completion tracking
+  sectionsCompleted: {
+    personalInfo: { type: Boolean, default: false },
+    summary: { type: Boolean, default: false },
+    experience: { type: Boolean, default: false },
+    education: { type: Boolean, default: false },
+    skills: { type: Boolean, default: false },
+    projects: { type: Boolean, default: false },
+    certifications: { type: Boolean, default: false }
+  },
+  // Design customization
+  designSettings: {
+    template: { type: String, default: 'modern' },
+    fontFamily: { type: String, default: 'Inter' },
+    fontSize: { type: String, default: 'medium' },
+    colorTheme: { type: String, default: 'blue' },
+    layout: { type: String, default: 'single-column' }
   },
   createdAt: {
     type: Date,

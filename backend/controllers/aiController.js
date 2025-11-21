@@ -525,10 +525,244 @@ const extractKeywords = asyncHandler(async (req, res) => {
   }
 });
 
+// Helper function to try multiple free models
+const tryMultipleModels = async (messages, maxTokens = 200) => {
+  const freeModels = [
+    'microsoft/phi-3-mini-128k-instruct:free',
+    'meta-llama/llama-3.2-3b-instruct:free',
+    'google/gemini-2.0-flash-exp:free',
+    'meta-llama/llama-3.1-8b-instruct:free',
+    'qwen/qwen-2-7b-instruct:free'
+  ];
+  
+  for (const model of freeModels) {
+    try {
+      const response = await axios.post(
+        'https://openrouter.ai/api/v1/chat/completions',
+        {
+          model,
+          messages,
+          temperature: 0.7,
+          max_tokens: maxTokens
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'http://localhost:5173',
+            'X-Title': 'AI Resume Builder'
+          }
+        }
+      );
+      console.log(`✅ Success with model: ${model}`);
+      return response;
+    } catch (error) {
+      const status = error.response?.status;
+      if (status === 429) {
+        console.log(`⏭️ Model ${model} is rate-limited, trying next...`);
+        continue;
+      } else if (status === 404) {
+        console.log(`⏭️ Model ${model} not found, trying next...`);
+        continue;
+      }
+      // For other errors, try next model anyway
+      console.log(`⏭️ Model ${model} failed (${status}), trying next...`);
+      continue;
+    }
+  }
+  
+  throw new Error('All free models are currently rate-limited. Please try again in a few minutes or add credits to OpenRouter.');
+};
+
+// @desc    Generate professional summary
+// @route   POST /api/ai/generateSummary
+// @access  Private
+const generateSummary = asyncHandler(async (req, res) => {
+  try {
+    const { personalInfo, experience, skills } = req.body;
+    
+    if (!process.env.GROQ_API_KEY) {
+      return res.status(400).json({
+        success: false,
+        message: 'Groq API key not configured'
+      });
+    }
+    
+    const prompt = `Generate a professional summary (2-3 sentences) for a resume based on the following information:
+    
+    Name: ${personalInfo?.firstName} ${personalInfo?.lastName}
+    Experience: ${experience?.map(exp => `${exp.position} at ${exp.company}`).join(', ') || 'Not provided'}
+    Skills: ${skills?.map(s => s.name || s).join(', ') || 'Not provided'}
+    
+    Create a compelling professional summary that highlights key strengths and career focus. Return ONLY the summary text, no JSON or extra formatting.`;
+    
+    const response = await tryMultipleModels([
+      {
+        role: 'system',
+        content: 'You are a professional resume writer. Generate concise, impactful professional summaries.'
+      },
+      {
+        role: 'user',
+        content: prompt
+      }
+    ], 200);
+    
+    const summary = response.data.choices[0].message.content.trim();
+    
+    res.json({
+      success: true,
+      data: { summary },
+      message: "Summary generated successfully"
+    });
+  } catch (error) {
+    console.error('AI Summary Generation Error:', error);
+    console.error('Error details:', error.response?.data || error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to generate summary',
+      error: error.message
+    });
+  }
+});
+
+// @desc    Generate experience description
+// @route   POST /api/ai/generateExperienceDescription
+// @access  Private
+const generateExperienceDescription = asyncHandler(async (req, res) => {
+  try {
+    const { jobTitle, company, responsibilities } = req.body;
+    
+    if (!process.env.GROQ_API_KEY) {
+      return res.status(400).json({
+        success: false,
+        message: 'Groq API key not configured'
+      });
+    }
+    
+    const prompt = `Generate a professional job description with 3-5 bullet points for the following role:
+    
+    Job Title: ${jobTitle}
+    Company: ${company}
+    Responsibilities: ${responsibilities || 'General responsibilities for this role'}
+    
+    Create impactful bullet points that:
+    - Start with strong action verbs
+    - Include quantifiable achievements where possible
+    - Highlight key skills and technologies
+    - Are ATS-friendly
+    
+    Return the bullet points as a JSON array of strings. Format: {"bulletPoints": ["point 1", "point 2", ...]}`;
+    
+    const response = await tryMultipleModels([
+      {
+        role: 'system',
+        content: 'You are a professional resume writer. Generate concise, impactful job descriptions with strong action verbs and quantifiable achievements.'
+      },
+      {
+        role: 'user',
+        content: prompt
+      }
+    ], 300);
+    
+    const aiContent = response.data.choices[0].message.content;
+    let parsedContent;
+    
+    try {
+      parsedContent = JSON.parse(aiContent);
+    } catch (parseError) {
+      const jsonMatch = aiContent.match(/```(?:json)?\s*({.*?})\s*```/s);
+      if (jsonMatch) {
+        parsedContent = JSON.parse(jsonMatch[1]);
+      } else {
+        // Fallback: split by newlines and filter
+        const bulletPoints = aiContent.split('\n')
+          .filter(line => line.trim().length > 0)
+          .map(line => line.replace(/^[-•*]\s*/, '').trim())
+          .filter(line => line.length > 0);
+        parsedContent = { bulletPoints };
+      }
+    }
+    
+    res.json({
+      success: true,
+      data: parsedContent,
+      message: "Experience description generated successfully"
+    });
+  } catch (error) {
+    console.error('AI Experience Description Error:', error);
+    console.error('Error details:', error.response?.data || error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to generate experience description',
+      error: error.message
+    });
+  }
+});
+
+// @desc    Generate project description
+// @route   POST /api/ai/generateProjectDescription
+// @access  Private
+const generateProjectDescription = asyncHandler(async (req, res) => {
+  try {
+    const { projectTitle, technologies, projectPurpose } = req.body;
+    
+    if (!process.env.GROQ_API_KEY) {
+      return res.status(400).json({
+        success: false,
+        message: 'Groq API key not configured'
+      });
+    }
+    
+    const prompt = `Generate a professional project description (2-3 sentences) for:
+    
+    Project: ${projectTitle}
+    Technologies: ${technologies || 'Not specified'}
+    Purpose: ${projectPurpose || 'General project'}
+    
+    Create a concise description that:
+    - Explains what the project does
+    - Highlights key technologies used
+    - Mentions impact or results if applicable
+    - Is professional and ATS-friendly
+    
+    Return ONLY the description text, no JSON or extra formatting.`;
+    
+    const response = await tryMultipleModels([
+      {
+        role: 'system',
+        content: 'You are a professional resume writer. Generate concise, impactful project descriptions.'
+      },
+      {
+        role: 'user',
+        content: prompt
+      }
+    ], 200);
+    
+    const description = response.data.choices[0].message.content.trim();
+    
+    res.json({
+      success: true,
+      data: { description },
+      message: "Project description generated successfully"
+    });
+  } catch (error) {
+    console.error('AI Project Description Error:', error);
+    console.error('Error details:', error.response?.data || error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to generate project description',
+      error: error.message
+    });
+  }
+});
+
 export {
   generateResumeContent,
   improveSection,
   generateAtsScore,
   rewriteForJobDescription,
-  extractKeywords
+  extractKeywords,
+  generateSummary,
+  generateExperienceDescription,
+  generateProjectDescription
 };

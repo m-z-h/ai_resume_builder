@@ -12,6 +12,7 @@ import AdminLogin from './pages/AdminLogin';
 import Register from './pages/Register';
 import UserDashboard from './pages/user/Dashboard';
 import ResumeBuilder from './pages/user/ResumeBuilder';
+import StepResumeBuilder from './pages/user/StepResumeBuilder';
 import AtsChecker from './pages/user/AtsChecker';
 import Templates from './pages/user/Templates';
 import Downloads from './pages/user/Downloads';
@@ -50,6 +51,8 @@ function App() {
               <Route path="/dashboard" element={<ProtectedRoute element={<UserDashboard />} allowedRoles={['user']} />} />
               <Route path="/resume/builder" element={<ProtectedRoute element={<ResumeBuilder />} allowedRoles={['user']} />} />
               <Route path="/resume/builder/:id" element={<ProtectedRoute element={<ResumeBuilder />} allowedRoles={['user']} />} />
+              <Route path="/resume/step-builder" element={<ProtectedRoute element={<StepResumeBuilder />} allowedRoles={['user']} />} />
+              <Route path="/resume/step-builder/:id" element={<ProtectedRoute element={<StepResumeBuilder />} allowedRoles={['user']} />} />
               <Route path="/ats-checker" element={<ProtectedRoute element={<AtsChecker />} allowedRoles={['user']} />} />
               <Route path="/templates" element={<ProtectedRoute element={<Templates />} allowedRoles={['user']} />} />
               <Route path="/downloads" element={<ProtectedRoute element={<Downloads />} allowedRoles={['user']} />} />

@@ -76,7 +76,9 @@ const createResume = asyncHandler(async (req, res) => {
 
   const cleanProjects = projects?.map(proj => ({
     ...proj,
-    technologies: proj.technologies?.filter(tech => tech && tech.trim() !== '') || []
+    technologies: Array.isArray(proj.technologies) 
+      ? proj.technologies.filter(tech => tech && tech.trim() !== '') 
+      : (proj.technologies ? [proj.technologies] : [])
   })) || [];
 
   const resume = new Resume({
@@ -101,7 +103,7 @@ const createResume = asyncHandler(async (req, res) => {
 // @route   PUT /api/resumes/:id
 // @access  Private
 const updateResume = asyncHandler(async (req, res) => {
-  const { title, templateId, personalInfo, experience, education, skills, certifications, projects, languages, customSections, isPublished } = req.body;
+  const { title, templateId, personalInfo, experience, education, skills, certifications, projects, languages, customSections, isPublished, sectionsCompleted, designSettings } = req.body;
 
   const resume = await Resume.findById(req.params.id);
 
@@ -129,7 +131,9 @@ const updateResume = asyncHandler(async (req, res) => {
 
     const cleanProjects = projects?.map(proj => ({
       ...proj,
-      technologies: proj.technologies?.filter(tech => tech && tech.trim() !== '') || []
+      technologies: Array.isArray(proj.technologies) 
+        ? proj.technologies.filter(tech => tech && tech.trim() !== '') 
+        : (proj.technologies ? [proj.technologies] : [])
     })) || [];
 
     resume.title = title || resume.title;
@@ -143,6 +147,8 @@ const updateResume = asyncHandler(async (req, res) => {
     resume.languages = languages || resume.languages;
     resume.customSections = customSections || resume.customSections;
     resume.isPublished = isPublished !== undefined ? isPublished : resume.isPublished;
+    resume.sectionsCompleted = sectionsCompleted || resume.sectionsCompleted;
+    resume.designSettings = designSettings || resume.designSettings;
 
     const updatedResume = await resume.save();
     res.json(updatedResume);
@@ -182,7 +188,9 @@ const duplicateResume = asyncHandler(async (req, res) => {
 
     const cleanProjects = originalResume.projects?.map(proj => ({
       ...proj,
-      technologies: proj.technologies?.filter(tech => tech && tech.trim() !== '') || []
+      technologies: Array.isArray(proj.technologies) 
+        ? proj.technologies.filter(tech => tech && tech.trim() !== '') 
+        : (proj.technologies ? [proj.technologies] : [])
     })) || [];
 
     const duplicatedResume = new Resume({

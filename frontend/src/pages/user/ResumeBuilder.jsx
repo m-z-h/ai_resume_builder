@@ -14,6 +14,7 @@ import { fetchTemplates } from '../../store/templateSlice';
 import { useMultipleFeatureCheck } from '../../hooks/useFeatureCheck';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import axios from 'axios';
 
 // Draggable section component
 const DraggableSection = ({ section, index, moveSection, children }) => {
@@ -215,6 +216,8 @@ const ResumeBuilder = () => {
   });
   
   const [activeSection, setActiveSection] = useState('personal');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiLoadingIndex, setAiLoadingIndex] = useState(null);
   // Removed showPreview state since preview is always visible
   
   // Debounce timer ref for real-time saving
@@ -333,6 +336,156 @@ const ResumeBuilder = () => {
     });
   }, []);
   
+  // AI Generation Functions
+  const generateAISummary = async () => {
+    // Validate that we have some data to work with
+    if (!resumeData.personalInfo.firstName && !resumeData.personalInfo.lastName) {
+      alert('Please fill in your name in the Personal Info section first');
+      return;
+    }
+    
+    setAiLoading(true);
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+      
+      if (!token) {
+        alert('Please login again to use AI features');
+        setAiLoading(false);
+        return;
+      }
+      
+      const response = await axios.post(
+        '/api/ai/generateSummary',
+        {
+          personalInfo: resumeData.personalInfo,
+          experience: resumeData.experience,
+          skills: resumeData.skills
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+      
+      if (response.data.success) {
+        setResumeData(prev => ({
+          ...prev,
+          summary: response.data.data.summary
+        }));
+      }
+    } catch (error) {
+      console.error('Error generating summary:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to generate summary. Please check your internet connection and try again.';
+      alert(errorMessage);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const generateExperienceDescription = async (index) => {
+    const exp = resumeData.experience[index];
+    
+    // Validate that we have required data
+    if (!exp.title || !exp.company) {
+      alert('Please fill in Job Title and Company first');
+      return;
+    }
+    
+    setAiLoadingIndex(index);
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+      
+      if (!token) {
+        alert('Please login again to use AI features');
+        setAiLoadingIndex(null);
+        return;
+      }
+      
+      const response = await axios.post(
+        '/api/ai/generateExperienceDescription',
+        {
+          jobTitle: exp.title,
+          company: exp.company,
+          responsibilities: exp.description || ''
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+      
+      if (response.data.success) {
+        const newExperience = [...resumeData.experience];
+        newExperience[index] = {
+          ...newExperience[index],
+          description: '• ' + response.data.data.bulletPoints.join('\n• ')
+        };
+        setResumeData(prev => ({
+          ...prev,
+          experience: newExperience
+        }));
+      }
+    } catch (error) {
+      console.error('Error generating experience description:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to generate description. Please check your internet connection and try again.';
+      alert(errorMessage);
+    } finally {
+      setAiLoadingIndex(null);
+    }
+  };
+
+  const generateProjectDescription = async (index) => {
+    const project = resumeData.projects[index];
+    
+    // Validate that we have required data
+    if (!project.name) {
+      alert('Please fill in Project Name first');
+      return;
+    }
+    
+    setAiLoadingIndex(index);
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+      
+      if (!token) {
+        alert('Please login again to use AI features');
+        setAiLoadingIndex(null);
+        return;
+      }
+      
+      const response = await axios.post(
+        '/api/ai/generateProjectDescription',
+        {
+          projectTitle: project.name,
+          technologies: project.technologies || '',
+          projectPurpose: project.description || ''
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+      
+      if (response.data.success) {
+        const newProjects = [...resumeData.projects];
+        newProjects[index] = {
+          ...newProjects[index],
+          description: response.data.data.description
+        };
+        setResumeData(prev => ({
+          ...prev,
+          projects: newProjects
+        }));
+      }
+    } catch (error) {
+      console.error('Error generating project description:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to generate description. Please check your internet connection and try again.';
+      alert(errorMessage);
+    } finally {
+      setAiLoadingIndex(null);
+    }
+  };
+
   // Save resume
   const saveResume = () => {
     // Generate a title if one doesn't exist
@@ -346,6 +499,16 @@ const ResumeBuilder = () => {
       dispatch(updateResume({ id, resumeData: resumeToSave }));
     } else {
       dispatch(createResume(resumeToSave));
+    }
+  };
+  
+  // Save and go to next section
+  const saveAndNext = () => {
+    saveResume();
+    const sections = ['personal', 'summary', 'experience', 'education', 'skills', 'projects', 'certifications'];
+    const currentIndex = sections.indexOf(activeSection);
+    if (currentIndex < sections.length - 1) {
+      setActiveSection(sections[currentIndex + 1]);
     }
   };
   
@@ -556,13 +719,48 @@ const ResumeBuilder = () => {
                         />
                       </div>
                     </div>
+                    <div className="mt-6 flex justify-end">
+                      <button
+                        onClick={saveAndNext}
+                        className="inline-flex items-center px-6 py-3 border border-transparent text-base font-bold rounded-xl shadow-sm text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300"
+                      >
+                        <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Save & Next
+                      </button>
+                    </div>
                   </div>
                 )}
                 
                 {/* Summary Section */}
                 {activeSection === 'summary' && (
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">Professional Summary</h2>
+                    <div className="flex justify-between items-center mb-4">
+                      <h2 className="text-2xl font-bold text-gray-900">Professional Summary</h2>
+                      <button
+                        onClick={generateAISummary}
+                        disabled={aiLoading}
+                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                      >
+                        {aiLoading ? (
+                          <>
+                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <svg className="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            Generate with AI
+                          </>
+                        )}
+                      </button>
+                    </div>
                     <div>
                       <label htmlFor="summary" className="block text-lg font-bold text-gray-700 mb-2">
                         Summary
@@ -575,6 +773,17 @@ const ResumeBuilder = () => {
                         className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full text-base border-gray-300 rounded-xl py-3 px-4 transition-all duration-300 hover:shadow-md"
                         placeholder="A brief summary of your professional background, skills, and career goals..."
                       ></textarea>
+                    </div>
+                    <div className="mt-6 flex justify-end">
+                      <button
+                        onClick={saveAndNext}
+                        className="inline-flex items-center px-6 py-3 border border-transparent text-base font-bold rounded-xl shadow-sm text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300"
+                      >
+                        <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Save & Next
+                      </button>
                     </div>
                   </div>
                 )}
@@ -682,9 +891,33 @@ const ResumeBuilder = () => {
                             </div>
                             
                             <div className="md:col-span-2">
-                              <label htmlFor={`exp-desc-${index}`} className="block text-lg font-bold text-gray-700 mb-2">
-                                Description
-                              </label>
+                              <div className="flex justify-between items-center mb-2">
+                                <label htmlFor={`exp-desc-${index}`} className="block text-lg font-bold text-gray-700">
+                                  Description
+                                </label>
+                                <button
+                                  onClick={() => generateExperienceDescription(index)}
+                                  disabled={aiLoadingIndex === index}
+                                  className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                                >
+                                  {aiLoadingIndex === index ? (
+                                    <>
+                                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                      </svg>
+                                      Generating...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <svg className="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                      </svg>
+                                      AI Generate
+                                    </>
+                                  )}
+                                </button>
+                              </div>
                               <textarea
                                 id={`exp-desc-${index}`}
                                 rows={4}
@@ -737,6 +970,17 @@ const ResumeBuilder = () => {
                           </div>
                         </div>
                       )}
+                    </div>
+                    <div className="mt-6 flex justify-end">
+                      <button
+                        onClick={saveAndNext}
+                        className="inline-flex items-center px-6 py-3 border border-transparent text-base font-bold rounded-xl shadow-sm text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300"
+                      >
+                        <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Save & Next
+                      </button>
                     </div>
                   </div>
                 )}
@@ -880,6 +1124,17 @@ const ResumeBuilder = () => {
                         </div>
                       )}
                     </div>
+                    <div className="mt-6 flex justify-end">
+                      <button
+                        onClick={saveAndNext}
+                        className="inline-flex items-center px-6 py-3 border border-transparent text-base font-bold rounded-xl shadow-sm text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300"
+                      >
+                        <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Save & Next
+                      </button>
+                    </div>
                   </div>
                 )}
                 
@@ -894,12 +1149,23 @@ const ResumeBuilder = () => {
                       <textarea
                         id="skills"
                         rows={6}
-                        value={resumeData.skills.join(', ')}
+                        value={Array.isArray(resumeData.skills) ? resumeData.skills.join(', ') : ''}
                         onChange={(e) => handleInputChange('skills', 'skills', e.target.value.split(',').map(skill => skill.trim()).filter(skill => skill))}
                         className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full text-base border-gray-300 rounded-xl py-3 px-4 transition-all duration-300 hover:shadow-md"
                         placeholder="JavaScript, React, Node.js, Python, SQL, etc."
                       ></textarea>
                       <p className="mt-2 text-sm text-gray-500">Enter skills separated by commas</p>
+                    </div>
+                    <div className="mt-6 flex justify-end">
+                      <button
+                        onClick={saveAndNext}
+                        className="inline-flex items-center px-6 py-3 border border-transparent text-base font-bold rounded-xl shadow-sm text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300"
+                      >
+                        <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Save & Next
+                      </button>
                     </div>
                   </div>
                 )}
@@ -972,9 +1238,33 @@ const ResumeBuilder = () => {
                             </div>
                             
                             <div className="md:col-span-2">
-                              <label htmlFor={`project-desc-${index}`} className="block text-lg font-bold text-gray-700 mb-2">
-                                Description
-                              </label>
+                              <div className="flex justify-between items-center mb-2">
+                                <label htmlFor={`project-desc-${index}`} className="block text-lg font-bold text-gray-700">
+                                  Description
+                                </label>
+                                <button
+                                  onClick={() => generateProjectDescription(index)}
+                                  disabled={aiLoadingIndex === index}
+                                  className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                                >
+                                  {aiLoadingIndex === index ? (
+                                    <>
+                                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                      </svg>
+                                      Generating...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <svg className="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                      </svg>
+                                      AI Generate
+                                    </>
+                                  )}
+                                </button>
+                              </div>
                               <textarea
                                 id={`project-desc-${index}`}
                                 rows={4}
@@ -1025,6 +1315,17 @@ const ResumeBuilder = () => {
                           </div>
                         </div>
                       )}
+                    </div>
+                    <div className="mt-6 flex justify-end">
+                      <button
+                        onClick={saveAndNext}
+                        className="inline-flex items-center px-6 py-3 border border-transparent text-base font-bold rounded-xl shadow-sm text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300"
+                      >
+                        <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Save & Next
+                      </button>
                     </div>
                   </div>
                 )}
@@ -1149,6 +1450,17 @@ const ResumeBuilder = () => {
                           </div>
                         </div>
                       )}
+                    </div>
+                    <div className="mt-6 flex justify-end">
+                      <button
+                        onClick={saveResume}
+                        className="inline-flex items-center px-6 py-3 border border-transparent text-base font-bold rounded-xl shadow-sm text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300"
+                      >
+                        <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Save Resume
+                      </button>
                     </div>
                   </div>
                 )}
