@@ -18,7 +18,7 @@ const useFeatureCheck = (featureName) => {
 
 export const useMultipleFeatureCheck = (featureNames) => {
   const dispatch = useDispatch();
-  const { features } = useSelector(state => state.features);
+  const { features, isLoading } = useSelector(state => state.features);
   
   // Memoize the feature names array to prevent unnecessary re-renders
   const memoizedFeatureNames = useMemo(() => featureNames, [JSON.stringify(featureNames)]);
@@ -29,13 +29,13 @@ export const useMultipleFeatureCheck = (featureNames) => {
     }
   }, [dispatch, memoizedFeatureNames]);
   
-  const featureStatus = {};
-  memoizedFeatureNames.forEach(name => {
-    const feature = features.find(f => f.featureName === name);
-    featureStatus[name] = feature ? feature.isEnabled : false;
-  });
+  // Create a function to check if a feature is enabled
+  const hasFeatureAccess = (featureName) => {
+    const feature = features.find(f => f.featureName === featureName);
+    return feature ? feature.isEnabled : false;
+  };
   
-  return featureStatus;
+  return { hasFeatureAccess, featureLoading: isLoading };
 };
 
 export default useFeatureCheck;

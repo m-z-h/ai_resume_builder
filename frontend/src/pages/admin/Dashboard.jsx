@@ -54,7 +54,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8">
-      <div className="w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="mb-8 text-center md:text-left">
           <h1 className="text-4xl font-bold text-gray-900 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">Admin Dashboard</h1>
           <p className="mt-2 text-gray-600 text-lg">Welcome to the AI Resume Builder admin panel</p>

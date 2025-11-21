@@ -27,10 +27,10 @@ const Messages = () => {
         console.error('Error fetching messages:', error);
         // Fallback to mock data if API call fails
         setMessages([
-          { id: 1, name: 'John Doe', email: 'john@example.com', message: 'I need help with my resume', date: '2023-05-15T14:30:00Z', status: 'unread' },
-          { id: 2, name: 'Jane Smith', email: 'jane@example.com', message: 'How can I improve my ATS score?', date: '2023-05-14T09:15:00Z', status: 'read' },
-          { id: 3, name: 'Robert Johnson', email: 'robert@example.com', message: 'The template feature is not working properly', date: '2023-05-12T16:45:00Z', status: 'unread' },
-          { id: 4, name: 'Emily Davis', email: 'emily@example.com', message: 'Thank you for the great service!', date: '2023-05-10T11:20:00Z', status: 'read' }
+          { _id: 1, name: 'John Doe', email: 'john@example.com', message: 'I need help with my resume', createdAt: '2023-05-15T14:30:00Z', isResolved: false },
+          { _id: 2, name: 'Jane Smith', email: 'jane@example.com', message: 'How can I improve my ATS score?', createdAt: '2023-05-14T09:15:00Z', isResolved: true },
+          { _id: 3, name: 'Robert Johnson', email: 'robert@example.com', message: 'The template feature is not working properly', createdAt: '2023-05-12T16:45:00Z', isResolved: false },
+          { _id: 4, name: 'Emily Davis', email: 'emily@example.com', message: 'Thank you for the great service!', createdAt: '2023-05-10T11:20:00Z', isResolved: true }
         ]);
       } finally {
         setLoading(false);
@@ -52,7 +52,7 @@ const Messages = () => {
       await axios.delete(`/api/contact/${messageId}`, config);
       
       // Remove the message from the state
-      setMessages(messages.filter(message => message.id !== messageId));
+      setMessages(messages.filter(message => message._id !== messageId));
     } catch (error) {
       console.error('Error deleting message:', error);
       // Optionally show an error message to the user
@@ -72,7 +72,7 @@ const Messages = () => {
       
       // Update the message status in the state
       setMessages(messages.map(message => 
-        message.id === messageId ? { ...message, status: 'read' } : message
+        message._id === messageId ? { ...message, isResolved: true } : message
       ));
     } catch (error) {
       console.error('Error marking message as read:', error);
@@ -87,7 +87,7 @@ const Messages = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8">
-      <div className="w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="mb-8 text-center md:text-left">
           <h1 className="text-4xl font-bold text-gray-900 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">Contact Messages</h1>
           <p className="mt-2 text-gray-600 text-lg">Manage messages from users</p>
@@ -131,7 +131,7 @@ const Messages = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {messages.map((message) => (
-                    <tr key={message.id} className={message.status === 'unread' ? 'bg-blue-50' : ''}>
+                    <tr key={message._id} className={!message.isResolved ? 'bg-blue-50' : ''}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{message.name}</div>
                       </td>
@@ -142,28 +142,28 @@ const Messages = () => {
                         <div className="text-sm text-gray-900 max-w-md truncate">{message.message}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">{formatDate(message.date)}</div>
+                        <div className="text-sm text-gray-500">{formatDate(message.createdAt)}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          message.status === 'unread' 
+                          !message.isResolved 
                             ? 'bg-yellow-100 text-yellow-800' 
                             : 'bg-green-100 text-green-800'
                         }`}>
-                          {message.status}
+                          {!message.isResolved ? 'Unread' : 'Resolved'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        {message.status === 'unread' && (
+                        {!message.isResolved && (
                           <button
-                            onClick={() => handleMarkAsRead(message.id)}
+                            onClick={() => handleMarkAsRead(message._id)}
                             className="text-indigo-600 hover:text-indigo-900 mr-3"
                           >
                             Mark as Read
                           </button>
                         )}
                         <button
-                          onClick={() => handleDeleteMessage(message.id)}
+                          onClick={() => handleDeleteMessage(message._id)}
                           className="text-red-600 hover:text-red-900"
                         >
                           Delete

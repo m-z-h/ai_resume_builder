@@ -40,7 +40,12 @@ const ResumeManagement = () => {
         });
       } catch (error) {
         console.error('Error fetching resumes:', error);
-        setError('Failed to load resumes');
+        // Check if it's a 403 error (Forbidden)
+        if (error.response && error.response.status === 403) {
+          setError('Access denied. You must be an administrator to view this page.');
+        } else {
+          setError('Failed to load resumes. Please try again later.');
+        }
         // Fallback to mock data if API call fails
         setResumes([
           { _id: 1, title: 'Software Engineer Resume', user: 'John Doe', createdAt: '2023-05-10', updatedAt: '2023-05-15', atsScore: 85, status: 'published' },
@@ -95,7 +100,7 @@ const ResumeManagement = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8">
-      <div className="w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="mb-8 text-center md:text-left">
           <h1 className="text-4xl font-bold text-gray-900 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">Resume Management</h1>
           <p className="mt-2 text-gray-600 text-lg">Manage all user resumes and their visibility</p>
@@ -155,7 +160,7 @@ const ResumeManagement = () => {
           <div className="flex justify-center py-12">
             <svg className="animate-spin h-12 w-12 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a7.962 7.962 0 014 0l3-2.647A7.962 7.962 0 0116 12H4c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
           </div>
         )}

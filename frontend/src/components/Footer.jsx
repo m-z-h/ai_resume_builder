@@ -5,7 +5,7 @@ const Footer = () => {
   return (
     <footer className="bg-gradient-to-r from-gray-900 via-indigo-900 to-purple-900 text-white">
       <div className="w-full py-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           <div className="col-span-1 md:col-span-2">
             <h3 className="text-3xl font-bold mb-6 flex items-center bg-clip-text text-transparent bg-gradient-to-r from-white to-indigo-300">
               <svg className="h-10 w-10 mr-3 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

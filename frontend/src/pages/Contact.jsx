@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -27,8 +28,15 @@ const Contact = () => {
     setSubmitError('');
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Prepare the data to match the backend Contact model
+      const contactData = {
+        name: formData.name,
+        email: formData.email,
+        message: `${formData.subject}\n\n${formData.message}`
+      };
+
+      // Send to the actual API endpoint
+      await axios.post('/api/contact', contactData);
       
       // Reset form
       setFormData({
@@ -42,6 +50,7 @@ const Contact = () => {
       setTimeout(() => setSubmitSuccess(false), 5000);
     } catch (error) {
       setSubmitError('Failed to send message. Please try again.');
+      console.error('Error submitting contact form:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -65,7 +74,7 @@ const Contact = () => {
 
       {/* Contact Section */}
       <div className="py-20 bg-gradient-to-br from-white to-gray-100">
-        <div className="w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-extrabold text-gray-900 sm:text-5xl mb-4">
               Get in Touch
@@ -283,7 +292,7 @@ const Contact = () => {
 
       {/* FAQ Section */}
       <div className="py-20 bg-white">
-        <div className="w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-extrabold text-gray-900 sm:text-5xl mb-4">
               Frequently Asked Questions

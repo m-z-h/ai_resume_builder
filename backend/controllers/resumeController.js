@@ -29,7 +29,16 @@ const getResumeById = asyncHandler(async (req, res) => {
 // @route   POST /api/resumes
 // @access  Private
 const createResume = asyncHandler(async (req, res) => {
-  const { title, templateId, personalInfo, experience, education, skills, certifications, projects, languages, customSections } = req.body;
+  let { title, templateId, personalInfo, experience, education, skills, certifications, projects, languages, customSections } = req.body;
+
+  // Generate a title if one doesn't exist
+  if (!title || title.trim() === '') {
+    if (personalInfo && personalInfo.firstName && personalInfo.lastName) {
+      title = `${personalInfo.firstName} ${personalInfo.lastName}`.trim();
+    } else {
+      title = 'Untitled Resume';
+    }
+  }
 
   // Validate template if provided
   let template = null;

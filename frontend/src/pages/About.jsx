@@ -20,7 +20,7 @@ const About = () => {
 
       {/* Mission Section */}
       <div className="py-20 bg-gradient-to-br from-white to-gray-100">
-        <div className="w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-base text-indigo-600 font-bold tracking-wide uppercase mb-4">Our Mission</h2>
             <p className="mt-2 text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl">
@@ -75,7 +75,7 @@ const About = () => {
 
       {/* Why AI Resumes Section */}
       <div className="py-20 bg-white">
-        <div className="w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-base text-indigo-600 font-bold tracking-wide uppercase mb-4">Why AI Resumes?</h2>
             <p className="mt-2 text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl">
@@ -139,7 +139,7 @@ const About = () => {
 
       {/* CTA Section */}
       <div className="bg-gradient-to-r from-indigo-700 to-purple-800">
-        <div className="w-full py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto lg:py-20 lg:flex lg:items-center lg:justify-between">
+        <div className="w-full py-16 px-4 sm:px-6 lg:px-8 lg:py-20 lg:flex lg:items-center lg:justify-between">
           <div className="text-center lg:text-left mb-8 lg:mb-0">
             <h2 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
               <span className="block">Ready to build your future?</span>

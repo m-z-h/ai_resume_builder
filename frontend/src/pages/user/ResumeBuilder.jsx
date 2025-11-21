@@ -196,10 +196,17 @@ const ResumeBuilder = () => {
   
   // Save resume
   const saveResume = () => {
+    // Generate a title if one doesn't exist
+    let resumeToSave = resumeData;
+    if (!id && (!resumeData.title || resumeData.title.trim() === '')) {
+      const generatedTitle = `${resumeData.personalInfo.firstName} ${resumeData.personalInfo.lastName}`.trim() || 'Untitled Resume';
+      resumeToSave = { ...resumeData, title: generatedTitle };
+    }
+    
     if (id) {
-      dispatch(updateResume({ id, resumeData }));
+      dispatch(updateResume({ id, resumeData: resumeToSave }));
     } else {
-      dispatch(createResume(resumeData));
+      dispatch(createResume(resumeToSave));
     }
   };
   
@@ -222,7 +229,7 @@ const ResumeBuilder = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8">
-        <div className="w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex justify-center py-12">
             <svg className="animate-spin h-12 w-12 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -238,7 +245,7 @@ const ResumeBuilder = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8">
-        <div className="w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-2xl relative" role="alert">
             <div className="flex items-center">
               <svg className="h-6 w-6 mr-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -255,7 +262,7 @@ const ResumeBuilder = () => {
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8">
-        <div className="w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
