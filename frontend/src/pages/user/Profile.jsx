@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { updateProfile, changePassword, reset } from '../../store/authSlice';
 
 const Profile = () => {
-  const { user } = useSelector(state => state.auth);
+  const dispatch = useDispatch();
+  const { user, loading, isSuccess, isError, message } = useSelector(state => state.auth);
   
   const [profileData, setProfileData] = useState({
-    name: '',
-    email: '',
-    avatar: ''
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    address: user?.address || '',
+    bio: user?.bio || ''
   });
   
   const [passwordData, setPasswordData] = useState({
@@ -17,75 +20,170 @@ const Profile = () => {
     confirmPassword: ''
   });
   
+  const [errors, setErrors] = useState({});
+  
+  // Reset state when component unmounts
   useEffect(() => {
-    if (user) {
-      setProfileData({
-        name: user.name || '',
-        email: user.email || '',
-        avatar: user.avatar || ''
-      });
+    return () => {
+      dispatch(reset());
+    };
+  }, [dispatch]);
+  
+  // Handle success and error messages
+  useEffect(() => {
+    if (isSuccess) {
+      // Show success message (you can implement a toast notification here)
+      setTimeout(() => {
+        dispatch(reset());
+      }, 3000);
     }
-  }, [user]);
+    
+    if (isError) {
+      // Show error message (you can implement a toast notification here)
+      setTimeout(() => {
+        dispatch(reset());
+      }, 5000);
+    }
+  }, [isSuccess, isError, dispatch]);
   
   const handleProfileChange = (e) => {
-    setProfileData({
-      ...profileData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setProfileData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
   };
   
   const handlePasswordChange = (e) => {
-    setPasswordData({
-      ...passwordData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setPasswordData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
   };
   
   const handleProfileSubmit = (e) => {
     e.preventDefault();
-    // Handle profile update
-    console.log('Profile update submitted:', profileData);
-    alert('Profile updated successfully!');
+    // Basic validation
+    const newErrors = {};
+    
+    if (!profileData.name.trim()) {
+      newErrors.name = 'Name is required';
+    }
+    
+    if (!profileData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(profileData.email)) {
+      newErrors.email = 'Email is invalid';
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    
+    dispatch(updateProfile(profileData));
   };
   
   const handlePasswordSubmit = (e) => {
     e.preventDefault();
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert('New passwords do not match!');
+    // Basic validation
+    const newErrors = {};
+    
+    if (!passwordData.currentPassword) {
+      newErrors.currentPassword = 'Current password is required';
+    }
+    
+    if (!passwordData.newPassword) {
+      newErrors.newPassword = 'New password is required';
+    } else if (passwordData.newPassword.length < 6) {
+      newErrors.newPassword = 'Password must be at least 6 characters';
+    }
+    
+    if (!passwordData.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password';
+    } else if (passwordData.newPassword !== passwordData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
-    // Handle password update
-    console.log('Password update submitted:', passwordData);
-    alert('Password updated successfully!');
     
-    // Reset password fields
+    dispatch(changePassword(passwordData));
+    
+    // Clear password fields after submission
     setPasswordData({
       currentPassword: '',
       newPassword: '',
       confirmPassword: ''
     });
   };
-  
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="w-full px-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">User Profile</h1>
-          <p className="mt-2 text-gray-600">Manage your account settings and preferences</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="mb-8 text-center md:text-left">
+          <h1 className="text-4xl font-bold text-gray-900 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">Profile Settings</h1>
+          <p className="mt-2 text-gray-600 text-lg">Manage your account information and security</p>
         </div>
         
+        {/* Success/Error Messages */}
+        {isSuccess && (
+          <div className="mb-6 p-4 rounded-xl bg-green-100 border border-green-200">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-green-800 font-medium">
+                {message || 'Profile updated successfully!'}
+              </p>
+            </div>
+          </div>
+        )}
+        
+        {isError && (
+          <div className="mb-6 p-4 rounded-xl bg-red-100 border border-red-200">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-red-800 font-medium">
+                {message || 'An error occurred. Please try again.'}
+              </p>
+            </div>
+          </div>
+        )}
+        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Profile Info */}
+          {/* Profile Information */}
           <div className="lg:col-span-2">
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-6 py-5 border-b border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900">Profile Information</h2>
+            <div className="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
+              <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
+                <h2 className="text-xl font-bold text-gray-900">Profile Information</h2>
               </div>
               <div className="p-6">
                 <form onSubmit={handleProfileSubmit}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                      <label htmlFor="name" className="block text-sm font-bold text-gray-700 mb-2">
                         Full Name
                       </label>
                       <input
@@ -94,12 +192,15 @@ const Profile = () => {
                         id="name"
                         value={profileData.name}
                         onChange={handleProfileChange}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className={`shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full text-base border-gray-300 rounded-xl py-3 px-4 transition-all duration-300 hover:shadow-md ${
+                          errors.name ? 'border-red-500' : ''
+                        }`}
                       />
+                      {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
                     </div>
                     
                     <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                      <label htmlFor="email" className="block text-sm font-bold text-gray-700 mb-2">
                         Email Address
                       </label>
                       <input
@@ -108,56 +209,86 @@ const Profile = () => {
                         id="email"
                         value={profileData.email}
                         onChange={handleProfileChange}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className={`shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full text-base border-gray-300 rounded-xl py-3 px-4 transition-all duration-300 hover:shadow-md ${
+                          errors.email ? 'border-red-500' : ''
+                        }`}
+                      />
+                      {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="phone" className="block text-sm font-bold text-gray-700 mb-2">
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        id="phone"
+                        value={profileData.phone}
+                        onChange={handleProfileChange}
+                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full text-base border-gray-300 rounded-xl py-3 px-4 transition-all duration-300 hover:shadow-md"
                       />
                     </div>
                     
                     <div>
-                      <label htmlFor="avatar" className="block text-sm font-medium text-gray-700">
-                        Profile Picture
+                      <label htmlFor="address" className="block text-sm font-bold text-gray-700 mb-2">
+                        Address
                       </label>
-                      <div className="mt-1 flex items-center">
-                        <span className="inline-block h-12 w-12 rounded-full overflow-hidden bg-gray-100">
-                          {profileData.avatar ? (
-                            <img src={profileData.avatar} alt="Profile" className="h-12 w-12 rounded-full" />
-                          ) : (
-                            <svg className="h-12 w-12 text-gray-300" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
-                            </svg>
-                          )}
-                        </span>
-                        <button
-                          type="button"
-                          className="ml-5 bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                        >
-                          Change
-                        </button>
-                      </div>
+                      <input
+                        type="text"
+                        name="address"
+                        id="address"
+                        value={profileData.address}
+                        onChange={handleProfileChange}
+                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full text-base border-gray-300 rounded-xl py-3 px-4 transition-all duration-300 hover:shadow-md"
+                      />
+                    </div>
+                    
+                    <div className="md:col-span-2">
+                      <label htmlFor="bio" className="block text-sm font-bold text-gray-700 mb-2">
+                        Bio
+                      </label>
+                      <textarea
+                        id="bio"
+                        name="bio"
+                        rows={4}
+                        value={profileData.bio}
+                        onChange={handleProfileChange}
+                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full text-base border-gray-300 rounded-xl py-3 px-4 transition-all duration-300 hover:shadow-md"
+                        placeholder="Tell us about yourself..."
+                      ></textarea>
                     </div>
                   </div>
                   
-                  <div className="mt-6">
+                  <div className="mt-8">
                     <button
                       type="submit"
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      disabled={loading}
+                      className="inline-flex items-center px-6 py-3 border border-transparent text-base font-bold rounded-xl shadow-sm text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-all duration-300 transform hover:scale-105"
                     >
-                      Save Changes
+                      {loading ? (
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      ) : null}
+                      {loading ? 'Saving...' : 'Save Changes'}
                     </button>
                   </div>
                 </form>
               </div>
             </div>
             
-            {/* Password Change */}
-            <div className="mt-8 bg-white shadow rounded-lg">
-              <div className="px-6 py-5 border-b border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900">Change Password</h2>
+            {/* Change Password */}
+            <div className="mt-8 bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
+              <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
+                <h2 className="text-xl font-bold text-gray-900">Change Password</h2>
               </div>
               <div className="p-6">
                 <form onSubmit={handlePasswordSubmit}>
-                  <div className="grid grid-cols-1 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700">
+                      <label htmlFor="currentPassword" className="block text-sm font-bold text-gray-700 mb-2">
                         Current Password
                       </label>
                       <input
@@ -166,12 +297,17 @@ const Profile = () => {
                         id="currentPassword"
                         value={passwordData.currentPassword}
                         onChange={handlePasswordChange}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className={`shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full text-base border-gray-300 rounded-xl py-3 px-4 transition-all duration-300 hover:shadow-md ${
+                          errors.currentPassword ? 'border-red-500' : ''
+                        }`}
                       />
+                      {errors.currentPassword && <p className="mt-1 text-sm text-red-600">{errors.currentPassword}</p>}
                     </div>
                     
+                    <div></div> {/* Empty div for spacing */}
+                    
                     <div>
-                      <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
+                      <label htmlFor="newPassword" className="block text-sm font-bold text-gray-700 mb-2">
                         New Password
                       </label>
                       <input
@@ -180,12 +316,15 @@ const Profile = () => {
                         id="newPassword"
                         value={passwordData.newPassword}
                         onChange={handlePasswordChange}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className={`shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full text-base border-gray-300 rounded-xl py-3 px-4 transition-all duration-300 hover:shadow-md ${
+                          errors.newPassword ? 'border-red-500' : ''
+                        }`}
                       />
+                      {errors.newPassword && <p className="mt-1 text-sm text-red-600">{errors.newPassword}</p>}
                     </div>
                     
                     <div>
-                      <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+                      <label htmlFor="confirmPassword" className="block text-sm font-bold text-gray-700 mb-2">
                         Confirm New Password
                       </label>
                       <input
@@ -194,17 +333,27 @@ const Profile = () => {
                         id="confirmPassword"
                         value={passwordData.confirmPassword}
                         onChange={handlePasswordChange}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className={`shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full text-base border-gray-300 rounded-xl py-3 px-4 transition-all duration-300 hover:shadow-md ${
+                          errors.confirmPassword ? 'border-red-500' : ''
+                        }`}
                       />
+                      {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>}
                     </div>
                   </div>
                   
-                  <div className="mt-6">
+                  <div className="mt-8">
                     <button
                       type="submit"
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      disabled={loading}
+                      className="inline-flex items-center px-6 py-3 border border-transparent text-base font-bold rounded-xl shadow-sm text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-all duration-300 transform hover:scale-105"
                     >
-                      Update Password
+                      {loading ? (
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      ) : null}
+                      {loading ? 'Updating...' : 'Update Password'}
                     </button>
                   </div>
                 </form>
@@ -212,54 +361,48 @@ const Profile = () => {
             </div>
           </div>
           
-          {/* Sidebar */}
+          {/* Account Information */}
           <div>
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Account Statistics</h2>
-              <div className="space-y-4">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Resumes Created</span>
-                  <span className="font-medium">5</span>
+            <div className="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
+              <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
+                <h2 className="text-xl font-bold text-gray-900">Account Information</h2>
+              </div>
+              <div className="p-6">
+                <div className="flex items-center mb-6">
+                  <div className="flex-shrink-0 h-16 w-16 rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+                    <span className="text-indigo-800 font-bold text-2xl">
+                      {user?.name?.charAt(0) || 'U'}
+                    </span>
+                  </div>
+                  <div className="ml-4">
+                    <h3 className="text-lg font-bold text-gray-900">{user?.name || 'User'}</h3>
+                    <p className="text-gray-600">{user?.email || 'user@example.com'}</p>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">ATS Checks</span>
-                  <span className="font-medium">12</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">AI Improvements</span>
-                  <span className="font-medium">8</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Templates Used</span>
-                  <span className="font-medium">3</span>
+                
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Member since</span>
+                    <span className="font-bold text-gray-900">
+                      {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Account type</span>
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-indigo-100 text-indigo-800">
+                      {user?.role === 'admin' || user?.role === 'superadmin' ? 'Admin' : 'User'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Resumes created</span>
+                    <span className="font-bold text-gray-900">0</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">ATS checks</span>
+                    <span className="font-bold text-gray-900">0</span>
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            <div className="mt-6 bg-white shadow rounded-lg p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Account Settings</h2>
-              <ul className="space-y-2">
-                <li>
-                  <Link to="#" className="text-indigo-600 hover:text-indigo-900">
-                    Notification Preferences
-                  </Link>
-                </li>
-                <li>
-                  <Link to="#" className="text-indigo-600 hover:text-indigo-900">
-                    Privacy Settings
-                  </Link>
-                </li>
-                <li>
-                  <Link to="#" className="text-indigo-600 hover:text-indigo-900">
-                    Billing Information
-                  </Link>
-                </li>
-                <li>
-                  <Link to="#" className="text-red-600 hover:text-red-900">
-                    Delete Account
-                  </Link>
-                </li>
-              </ul>
             </div>
           </div>
         </div>

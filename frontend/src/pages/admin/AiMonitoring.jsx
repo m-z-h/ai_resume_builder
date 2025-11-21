@@ -127,7 +127,7 @@ const AiMonitoring = () => {
         
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-          <div className="bg-white shadow rounded-lg p-6">
+          <div className="bg-white shadow-xl rounded-2xl p-6 border border-gray-100">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-12 h-12 bg-indigo-100 rounded-md flex items-center justify-center">
@@ -287,7 +287,7 @@ const AiMonitoring = () => {
           </div>
           
           {/* Error Logs */}
-          <div className="bg-white shadow rounded-lg p-6">
+          <div className="bg-white shadow-xl rounded-2xl p-6 border border-gray-100">
             <h2 className="text-lg font-medium text-gray-900 mb-4">Recent Errors</h2>
             <div className="space-y-3">
               <div className="border border-gray-200 rounded-lg p-3">

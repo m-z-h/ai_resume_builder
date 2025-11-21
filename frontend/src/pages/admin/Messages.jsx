@@ -21,8 +21,8 @@ const Messages = () => {
           },
         };
 
-        const response = await axios.get('/api/messages', config);
-        setMessages(response.data);
+        const response = await axios.get('/api/contact', config);
+        setMessages(response.data.data);
       } catch (error) {
         console.error('Error fetching messages:', error);
         // Fallback to mock data if API call fails
@@ -49,7 +49,7 @@ const Messages = () => {
         },
       };
 
-      await axios.delete(`/api/messages/${messageId}`, config);
+      await axios.delete(`/api/contact/${messageId}`, config);
       
       // Remove the message from the state
       setMessages(messages.filter(message => message.id !== messageId));
@@ -68,7 +68,7 @@ const Messages = () => {
         },
       };
 
-      await axios.put(`/api/messages/${messageId}/read`, {}, config);
+      await axios.put(`/api/contact/${messageId}`, { isResolved: true }, config);
       
       // Update the message status in the state
       setMessages(messages.map(message => 
@@ -86,11 +86,11 @@ const Messages = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="w-full px-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Contact Messages</h1>
-          <p className="mt-2 text-gray-600">Manage messages from users</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="mb-8 text-center md:text-left">
+          <h1 className="text-4xl font-bold text-gray-900 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">Contact Messages</h1>
+          <p className="mt-2 text-gray-600 text-lg">Manage messages from users</p>
         </div>
 
         {loading ? (
@@ -101,7 +101,7 @@ const Messages = () => {
             </svg>
           </div>
         ) : (
-          <div className="bg-white shadow rounded-lg overflow-hidden">
+          <div className="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
             <div className="px-6 py-5 border-b border-gray-200">
               <h2 className="text-lg font-medium text-gray-900">Messages ({messages.length})</h2>
             </div>

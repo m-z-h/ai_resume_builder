@@ -30,7 +30,7 @@ const ResumeManagement = () => {
           },
         };
 
-        const response = await axios.get('/api/resumes/admin', config);
+        const response = await axios.get('/api/resumes/admin/all', config);
         setResumes(response.data.resumes);
         setPagination({
           ...pagination,
@@ -94,18 +94,18 @@ const ResumeManagement = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="w-full px-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Resume Management</h1>
-          <p className="mt-2 text-gray-600">Manage all user resumes and their visibility</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="mb-8 text-center md:text-left">
+          <h1 className="text-4xl font-bold text-gray-900 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">Resume Management</h1>
+          <p className="mt-2 text-gray-600 text-lg">Manage all user resumes and their visibility</p>
         </div>
         
         {/* Filters */}
-        <div className="bg-white shadow rounded-lg p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white shadow-xl rounded-2xl p-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="search" className="block text-sm font-bold text-gray-700 mb-2">
                 Search
               </label>
               <input
@@ -113,20 +113,20 @@ const ResumeManagement = () => {
                 name="search"
                 id="search"
                 placeholder="Title or user"
-                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full text-base border-gray-300 rounded-xl py-3 px-4 transition-all duration-300 hover:shadow-md"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             
             <div>
-              <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="status" className="block text-sm font-bold text-gray-700 mb-2">
                 Status
               </label>
               <select
                 id="status"
                 name="status"
-                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full text-base border-gray-300 rounded-xl py-3 px-4 transition-all duration-300 hover:shadow-md"
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
               >
@@ -139,8 +139,11 @@ const ResumeManagement = () => {
             <div className="flex items-end">
               <button
                 type="button"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-bold rounded-xl shadow-lg text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300 transform hover:scale-105"
               >
+                <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
                 Export Data
               </button>
             </div>
@@ -159,15 +162,15 @@ const ResumeManagement = () => {
 
         {/* Error message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 mb-8">
             <div className="flex">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <svg className="h-6 w-6 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
               </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">{error}</h3>
+              <div className="ml-4">
+                <h3 className="text-base font-bold text-red-800">{error}</h3>
               </div>
             </div>
           </div>
@@ -175,54 +178,54 @@ const ResumeManagement = () => {
         
         {/* Resumes Table */}
         {!loading && (
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-5 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Resumes</h2>
+          <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
+              <h2 className="text-xl font-bold text-gray-900">Resumes</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                       Resume
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                       User
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                       Created
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                       Last Updated
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                       ATS Score
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                       Status
                     </th>
-                    <th scope="col" className="relative px-6 py-3">
+                    <th scope="col" className="relative px-6 py-4">
                       <span className="sr-only">Actions</span>
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {resumes.map((resume) => (
-                    <tr key={resume._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{resume.title}</div>
+                    <tr key={resume._id} className="hover:bg-gray-50 transition-all duration-150">
+                      <td className="px-6 py-5 whitespace-nowrap">
+                        <div className="text-base font-bold text-gray-900">{resume.title}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{resume.user}</div>
+                      <td className="px-6 py-5 whitespace-nowrap">
+                        <div className="text-base font-medium text-gray-900">{resume.user}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-5 whitespace-nowrap text-base text-gray-500">
                         {formatDate(resume.createdAt)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-5 whitespace-nowrap text-base text-gray-500">
                         {formatDate(resume.updatedAt)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      <td className="px-6 py-5 whitespace-nowrap">
+                        <span className={`px-3 py-1 inline-flex text-sm leading-5 font-bold rounded-full ${
                           resume.atsScore >= 80 ? 'bg-green-100 text-green-800' :
                           resume.atsScore >= 60 ? 'bg-yellow-100 text-yellow-800' :
                           'bg-red-100 text-red-800'
@@ -230,38 +233,38 @@ const ResumeManagement = () => {
                           {resume.atsScore}/100
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      <td className="px-6 py-5 whitespace-nowrap">
+                        <span className={`px-3 py-1 inline-flex text-sm leading-5 font-bold rounded-full ${
                           resume.status === 'published' ? 'bg-green-100 text-green-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
                           {resume.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex justify-end space-x-2">
-                          <button className="text-indigo-600 hover:text-indigo-900">
+                      <td className="px-6 py-5 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex justify-end space-x-3">
+                          <button className="text-indigo-600 hover:text-indigo-900 font-bold transition-colors duration-150">
                             View
                           </button>
-                          <button className="text-indigo-600 hover:text-indigo-900">
+                          <button className="text-indigo-600 hover:text-indigo-900 font-bold transition-colors duration-150">
                             Edit
                           </button>
                           {resume.status === 'published' ? (
                             <button 
                               onClick={() => handleStatusChange(resume._id, 'draft')}
-                              className="text-yellow-600 hover:text-yellow-900"
+                              className="text-yellow-600 hover:text-yellow-900 font-bold transition-colors duration-150"
                             >
                               Unpublish
                             </button>
                           ) : (
                             <button 
                               onClick={() => handleStatusChange(resume._id, 'published')}
-                              className="text-green-600 hover:text-green-900"
+                              className="text-green-600 hover:text-green-900 font-bold transition-colors duration-150"
                             >
                               Publish
                             </button>
                           )}
-                          <button className="text-red-600 hover:text-red-900">
+                          <button className="text-red-600 hover:text-red-900 font-bold transition-colors duration-150">
                             Delete
                           </button>
                         </div>
@@ -273,15 +276,15 @@ const ResumeManagement = () => {
             </div>
             
             {/* Pagination */}
-            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <div className="bg-white px-6 py-5 flex items-center justify-between border-t border-gray-200">
               <div className="flex-1 flex justify-between sm:hidden">
                 <button 
                   onClick={() => handlePageChange(pagination.page - 1)}
                   disabled={pagination.page === 1}
-                  className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                  className={`relative inline-flex items-center px-5 py-3 border border-gray-300 text-base font-bold rounded-xl ${
                     pagination.page === 1 
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                      : 'bg-white text-gray-700 hover:bg-gray-50 shadow-md hover:shadow-lg transition-all duration-300'
                   }`}
                 >
                   Previous
@@ -289,10 +292,10 @@ const ResumeManagement = () => {
                 <button 
                   onClick={() => handlePageChange(pagination.page + 1)}
                   disabled={pagination.page === pagination.totalPages}
-                  className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                  className={`ml-3 relative inline-flex items-center px-5 py-3 border border-gray-300 text-base font-bold rounded-xl ${
                     pagination.page === pagination.totalPages 
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                      : 'bg-white text-gray-700 hover:bg-gray-50 shadow-md hover:shadow-lg transition-all duration-300'
                   }`}
                 >
                   Next
@@ -300,20 +303,20 @@ const ResumeManagement = () => {
               </div>
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm text-gray-700">
-                    Showing <span className="font-medium">{(pagination.page - 1) * pagination.limit + 1}</span> to <span className="font-medium">{Math.min(pagination.page * pagination.limit, pagination.totalResumes)}</span> of{' '}
-                    <span className="font-medium">{pagination.totalResumes}</span> results
+                  <p className="text-base text-gray-700">
+                    Showing <span className="font-bold">{(pagination.page - 1) * pagination.limit + 1}</span> to <span className="font-bold">{Math.min(pagination.page * pagination.limit, pagination.totalResumes)}</span> of{' '}
+                    <span className="font-bold">{pagination.totalResumes}</span> results
                   </p>
                 </div>
                 <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <nav className="relative z-0 inline-flex rounded-xl shadow-sm -space-x-px" aria-label="Pagination">
                     <button
                       onClick={() => handlePageChange(pagination.page - 1)}
                       disabled={pagination.page === 1}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 text-sm font-medium ${
+                      className={`relative inline-flex items-center px-3 py-3 rounded-l-xl border border-gray-300 text-base font-bold ${
                         pagination.page === 1 
                           ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                          : 'bg-white text-gray-500 hover:bg-gray-50'
+                          : 'bg-white text-gray-500 hover:bg-gray-50 shadow-md hover:shadow-lg transition-all duration-300'
                       }`}
                     >
                       <span className="sr-only">Previous</span>
@@ -329,10 +332,10 @@ const ResumeManagement = () => {
                         <button
                           key={pageNum}
                           onClick={() => handlePageChange(pageNum)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          className={`relative inline-flex items-center px-5 py-3 border text-base font-bold ${
                             pageNum === pagination.page
-                              ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
-                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                              ? 'z-10 bg-gradient-to-r from-indigo-500 to-purple-600 border-indigo-500 text-white shadow-lg'
+                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50 shadow-md hover:shadow-lg transition-all duration-300'
                           }`}
                         >
                           {pageNum}
@@ -343,10 +346,10 @@ const ResumeManagement = () => {
                     <button
                       onClick={() => handlePageChange(pagination.page + 1)}
                       disabled={pagination.page === pagination.totalPages}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 text-sm font-medium ${
+                      className={`relative inline-flex items-center px-3 py-3 rounded-r-xl border border-gray-300 text-base font-bold ${
                         pagination.page === pagination.totalPages 
                           ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                          : 'bg-white text-gray-500 hover:bg-gray-50'
+                          : 'bg-white text-gray-500 hover:bg-gray-50 shadow-md hover:shadow-lg transition-all duration-300'
                       }`}
                     >
                       <span className="sr-only">Next</span>

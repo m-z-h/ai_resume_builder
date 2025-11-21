@@ -1,433 +1,390 @@
 import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 
 const AtsChecker = () => {
-  const [resumeFile, setResumeFile] = useState(null);
-  const [jobDescription, setJobDescription] = useState('');
-  const [atsReport, setAtsReport] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  
-  const handleFileChange = (e) => {
-    setResumeFile(e.target.files[0]);
-  };
-  
-  const handleSubmit = async (e) => {
+  const [file, setFile] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleDragOver = (e) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
     
-    // In a real implementation, this would call the backend API
-    // For now, we'll simulate a response
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const droppedFile = e.dataTransfer.files[0];
+      if (droppedFile.type === 'application/pdf' || 
+          droppedFile.type === 'application/msword' ||
+          droppedFile.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        setFile(droppedFile);
+      } else {
+        alert('Please upload a PDF, DOC, or DOCX file');
+      }
+    }
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedFile = e.target.files[0];
+      if (selectedFile.type === 'application/pdf' || 
+          selectedFile.type === 'application/msword' ||
+          selectedFile.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        setFile(selectedFile);
+      } else {
+        alert('Please upload a PDF, DOC, or DOCX file');
+      }
+    }
+  };
+
+  const handleAnalyze = () => {
+    if (!file) {
+      alert('Please select a file first');
+      return;
+    }
+
+    setLoading(true);
+    
+    // Simulate API call
     setTimeout(() => {
-      setAtsReport({
-        overallScore: 85,
-        keywordMatch: {
-          score: 90,
-          matchedKeywords: ["JavaScript", "React", "Node.js"],
-          missingKeywords: ["TypeScript", "AWS", "Docker"]
-        },
-        formatting: {
-          score: 80,
-          issues: ["Inconsistent bullet points", "Missing metrics"],
-          suggestions: ["Standardize bullet points", "Add quantifiable metrics"]
-        },
-        actionVerbs: {
-          score: 75,
-          usedVerbs: ["managed", "developed"],
-          suggestedVerbs: ["orchestrated", "pioneered", "optimized"]
-        },
-        skillAnalysis: {
-          hardSkills: {
-            score: 88,
-            identified: ["JavaScript", "React", "Node.js", "MongoDB"]
-          },
-          softSkills: {
-            score: 70,
-            identified: ["Leadership", "Communication"]
-          }
-        },
-        lengthCheck: {
-          score: 95,
-          currentPageCount: 1,
-          recommendedPageCount: 1
-        },
-        weakSentences: [
-          {
-            sentence: "Responsible for development tasks",
-            suggestions: ["Add specific technologies", "Include measurable outcomes"]
-          }
+      const mockResult = {
+        score: 85,
+        keywords: [
+          { word: 'JavaScript', found: true },
+          { word: 'React', found: true },
+          { word: 'Node.js', found: false },
+          { word: 'HTML', found: true },
+          { word: 'CSS', found: true },
+          { word: 'MongoDB', found: false }
         ],
-        detailedFeedback: "Your resume is well-structured and includes relevant keywords. To improve further, add more quantifiable metrics and include the missing technical keywords."
-      });
-      setIsLoading(false);
-    }, 1500);
+        suggestions: [
+          'Add more technical keywords relevant to the job description',
+          'Include specific metrics and achievements in your experience section',
+          'Ensure your contact information is clearly visible',
+          'Use standard section headers like "Experience" and "Education"'
+        ],
+        improvements: [
+          'Your resume is well-formatted and should parse correctly in most ATS systems',
+          'Consider adding Node.js and MongoDB to match more job descriptions',
+          'Your keyword match rate is strong at 67%'
+        ]
+      };
+      
+      setAnalysisResult(mockResult);
+      setLoading(false);
+    }, 2000);
   };
-  
-  const getScoreColor = (score) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    return 'text-red-600';
+
+  const handleReset = () => {
+    setFile(null);
+    setAnalysisResult(null);
   };
-  
-  const getScoreBg = (score) => {
-    if (score >= 80) return 'bg-green-100';
-    if (score >= 60) return 'bg-yellow-100';
-    return 'bg-red-100';
-  };
-  
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="w-full px-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">ATS Score Checker</h1>
-          <p className="mt-2 text-gray-600">Upload your resume and check its compatibility with Applicant Tracking Systems</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="mb-8 text-center md:text-left">
+          <h1 className="text-4xl font-bold text-gray-900 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">ATS Resume Checker</h1>
+          <p className="mt-2 text-gray-600 text-lg">Check if your resume is optimized for Applicant Tracking Systems</p>
         </div>
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Input Section */}
-          <div className="lg:col-span-1">
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Check Your Resume</h2>
-              <form onSubmit={handleSubmit}>
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Upload Resume
-                  </label>
-                  <div className="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                    <div className="space-y-1 text-center">
-                      <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      <div className="flex text-sm text-gray-600">
-                        <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
-                          <span>Upload a file</span>
-                          <input 
-                            id="file-upload" 
-                            name="file-upload" 
-                            type="file" 
-                            className="sr-only" 
-                            onChange={handleFileChange}
-                            accept=".pdf,.doc,.docx,.txt"
-                          />
-                        </label>
-                        <p className="pl-1">or drag and drop</p>
+          {/* Upload Section */}
+          <div className="lg:col-span-2">
+            <div className="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
+              <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
+                <h2 className="text-xl font-bold text-gray-900">Upload Your Resume</h2>
+              </div>
+              <div className="p-6">
+                {!analysisResult ? (
+                  <>
+                    <div 
+                      className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all duration-300 ${
+                        isDragging 
+                          ? 'border-indigo-500 bg-indigo-50' 
+                          : 'border-gray-300 hover:border-indigo-400 hover:bg-gray-50'
+                      }`}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      onClick={() => document.getElementById('file-upload').click()}
+                    >
+                      <div className="flex flex-col items-center">
+                        <div className="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mb-4">
+                          <svg className="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                          </svg>
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-900 mb-2">
+                          {file ? file.name : 'Drag & drop your resume here'}
+                        </h3>
+                        <p className="text-gray-500 mb-4">
+                          {file ? 'Click to change file' : 'Supports PDF, DOC, and DOCX formats'}
+                        </p>
+                        <button
+                          type="button"
+                          className="inline-flex items-center px-5 py-3 border border-transparent text-base font-bold rounded-xl text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300 transform hover:scale-105"
+                        >
+                          <svg className="-ml-1 mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                          </svg>
+                          Select File
+                        </button>
+                        <input
+                          id="file-upload"
+                          type="file"
+                          className="hidden"
+                          accept=".pdf,.doc,.docx"
+                          onChange={handleFileChange}
+                        />
                       </div>
-                      <p className="text-xs text-gray-500">
-                        PDF, DOC, DOCX up to 10MB
-                      </p>
+                    </div>
+                    
+                    <div className="mt-8 flex justify-end">
+                      <button
+                        onClick={handleAnalyze}
+                        disabled={!file || loading}
+                        className="inline-flex items-center px-6 py-3 border border-transparent text-base font-bold rounded-xl shadow-lg text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300 transform hover:scale-105 disabled:opacity-50"
+                      >
+                        {loading ? (
+                          <>
+                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Analyzing...
+                          </>
+                        ) : (
+                          'Analyze Resume'
+                        )}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center">
+                    <div className="flex flex-col items-center">
+                      <div className="w-24 h-24 bg-gradient-to-br from-green-100 to-teal-100 rounded-2xl flex items-center justify-center mb-6">
+                        <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-2">Analysis Complete!</h3>
+                      <p className="text-gray-600 mb-6">Your resume has been successfully analyzed</p>
+                      <button
+                        onClick={handleReset}
+                        className="inline-flex items-center px-5 py-3 border border-transparent text-base font-bold rounded-xl text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300 transform hover:scale-105"
+                      >
+                        <svg className="-ml-1 mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Check Another Resume
+                      </button>
                     </div>
                   </div>
-                  {resumeFile && (
-                    <p className="mt-2 text-sm text-gray-500">
-                      Selected: {resumeFile.name}
-                    </p>
-                  )}
-                </div>
-                
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Job Description (Optional)
-                  </label>
-                  <textarea
-                    rows={4}
-                    className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border border-gray-300 rounded-md p-3"
-                    placeholder="Paste the job description to tailor your resume..."
-                    value={jobDescription}
-                    onChange={(e) => setJobDescription(e.target.value)}
-                  />
-                </div>
-                
-                <button
-                  type="submit"
-                  disabled={isLoading || !resumeFile}
-                  className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-                    isLoading || !resumeFile 
-                      ? 'bg-gray-400 cursor-not-allowed' 
-                      : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
-                  }`}
-                >
-                  {isLoading ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Analyzing...
-                    </>
-                  ) : (
-                    'Check ATS Score'
-                  )}
-                </button>
-              </form>
-            </div>
-            
-            <div className="mt-6 bg-white shadow rounded-lg p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">How ATS Works</h2>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li className="flex items-start">
-                  <svg className="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Scans for relevant keywords from job descriptions</span>
-                </li>
-                <li className="flex items-start">
-                  <svg className="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Evaluates formatting for readability</span>
-                </li>
-                <li className="flex items-start">
-                  <svg className="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Checks for appropriate action verbs</span>
-                </li>
-                <li className="flex items-start">
-                  <svg className="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Analyzes skill matching</span>
-                </li>
-              </ul>
+                )}
+              </div>
             </div>
           </div>
           
-          {/* Results Section */}
-          <div className="lg:col-span-2">
-            {atsReport ? (
-              <div className="space-y-6">
-                {/* Overall Score */}
-                <div className="bg-white shadow rounded-lg p-6">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-medium text-gray-900">ATS Compatibility Score</h2>
-                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getScoreBg(atsReport.overallScore)}`}>
-                      <span className={`text-lg font-bold ${getScoreColor(atsReport.overallScore)}`}>
-                        {atsReport.overallScore}/100
-                      </span>
+          {/* Info Panel */}
+          <div>
+            <div className="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
+              <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
+                <h2 className="text-xl font-bold text-gray-900">How ATS Works</h2>
+              </div>
+              <div className="p-6">
+                <div className="space-y-4">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 mt-1">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+                        <span className="text-indigo-600 font-bold text-sm">1</span>
+                      </div>
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-base font-bold text-gray-900">Parsing</h3>
+                      <p className="mt-1 text-sm text-gray-600">
+                        ATS software scans your resume and extracts text content, ignoring graphics and complex formatting.
+                      </p>
                     </div>
                   </div>
                   
-                  <div className="mt-4">
-                    <div className="w-full bg-gray-200 rounded-full h-4">
-                      <div 
-                        className={`h-4 rounded-full ${
-                          atsReport.overallScore >= 80 ? 'bg-green-500' : 
-                          atsReport.overallScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                        }`} 
-                        style={{ width: `${atsReport.overallScore}%` }}
-                      ></div>
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 mt-1">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+                        <span className="text-indigo-600 font-bold text-sm">2</span>
+                      </div>
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-base font-bold text-gray-900">Keyword Matching</h3>
+                      <p className="mt-1 text-sm text-gray-600">
+                        The system matches keywords from your resume with those in the job description to determine relevance.
+                      </p>
                     </div>
                   </div>
                   
-                  <div className="mt-4">
-                    <p className="text-gray-600">{atsReport.detailedFeedback}</p>
-                  </div>
-                </div>
-                
-                {/* Detailed Analysis */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Keyword Match */}
-                  <div className="bg-white shadow rounded-lg p-6">
-                    <h3 className="text-md font-medium text-gray-900 mb-3">Keyword Match</h3>
-                    <div className="flex items-center mb-3">
-                      <span className={`text-2xl font-bold ${getScoreColor(atsReport.keywordMatch.score)}`}>
-                        {atsReport.keywordMatch.score}%
-                      </span>
-                      <span className="ml-2 text-sm text-gray-500">Matched</span>
-                    </div>
-                    
-                    <div className="mb-3">
-                      <h4 className="text-sm font-medium text-gray-700 mb-1">Matched Keywords</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {atsReport.keywordMatch.matchedKeywords.map((keyword, index) => (
-                          <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            {keyword}
-                          </span>
-                        ))}
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 mt-1">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+                        <span className="text-indigo-600 font-bold text-sm">3</span>
                       </div>
                     </div>
-                    
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-700 mb-1">Missing Keywords</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {atsReport.keywordMatch.missingKeywords.map((keyword, index) => (
-                          <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            {keyword}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Formatting */}
-                  <div className="bg-white shadow rounded-lg p-6">
-                    <h3 className="text-md font-medium text-gray-900 mb-3">Formatting</h3>
-                    <div className="flex items-center mb-3">
-                      <span className={`text-2xl font-bold ${getScoreColor(atsReport.formatting.score)}`}>
-                        {atsReport.formatting.score}%
-                      </span>
-                      <span className="ml-2 text-sm text-gray-500">Compliant</span>
-                    </div>
-                    
-                    <div className="mb-3">
-                      <h4 className="text-sm font-medium text-gray-700 mb-1">Issues Found</h4>
-                      <ul className="text-sm text-gray-600 space-y-1">
-                        {atsReport.formatting.issues.map((issue, index) => (
-                          <li key={index} className="flex items-start">
-                            <svg className="h-4 w-4 text-red-500 mr-1 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            {issue}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-700 mb-1">Suggestions</h4>
-                      <ul className="text-sm text-gray-600 space-y-1">
-                        {atsReport.formatting.suggestions.map((suggestion, index) => (
-                          <li key={index} className="flex items-start">
-                            <svg className="h-4 w-4 text-green-500 mr-1 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            {suggestion}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                  
-                  {/* Action Verbs */}
-                  <div className="bg-white shadow rounded-lg p-6">
-                    <h3 className="text-md font-medium text-gray-900 mb-3">Action Verbs</h3>
-                    <div className="flex items-center mb-3">
-                      <span className={`text-2xl font-bold ${getScoreColor(atsReport.actionVerbs.score)}`}>
-                        {atsReport.actionVerbs.score}%
-                      </span>
-                      <span className="ml-2 text-sm text-gray-500">Strength</span>
-                    </div>
-                    
-                    <div className="mb-3">
-                      <h4 className="text-sm font-medium text-gray-700 mb-1">Used Verbs</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {atsReport.actionVerbs.usedVerbs.map((verb, index) => (
-                          <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {verb}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-700 mb-1">Suggested Verbs</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {atsReport.actionVerbs.suggestedVerbs.map((verb, index) => (
-                          <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                            {verb}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Skills Analysis */}
-                  <div className="bg-white shadow rounded-lg p-6">
-                    <h3 className="text-md font-medium text-gray-900 mb-3">Skills Analysis</h3>
-                    
-                    <div className="mb-4">
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm font-medium text-gray-700">Hard Skills</span>
-                        <span className={`text-sm font-medium ${getScoreColor(atsReport.skillAnalysis.hardSkills.score)}`}>
-                          {atsReport.skillAnalysis.hardSkills.score}%
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="h-2 rounded-full bg-blue-500" 
-                          style={{ width: `${atsReport.skillAnalysis.hardSkills.score}%` }}
-                        ></div>
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {atsReport.skillAnalysis.hardSkills.identified.map((skill, index) => (
-                          <span key={index} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm font-medium text-gray-700">Soft Skills</span>
-                        <span className={`text-sm font-medium ${getScoreColor(atsReport.skillAnalysis.softSkills.score)}`}>
-                          {atsReport.skillAnalysis.softSkills.score}%
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="h-2 rounded-full bg-purple-500" 
-                          style={{ width: `${atsReport.skillAnalysis.softSkills.score}%` }}
-                        ></div>
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {atsReport.skillAnalysis.softSkills.identified.map((skill, index) => (
-                          <span key={index} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
+                    <div className="ml-3">
+                      <h3 className="text-base font-bold text-gray-900">Scoring</h3>
+                      <p className="mt-1 text-sm text-gray-600">
+                        Based on keyword matches and formatting, your resume receives a score that determines if it moves forward.
+                      </p>
                     </div>
                   </div>
                 </div>
                 
-                {/* Weak Sentences */}
-                <div className="bg-white shadow rounded-lg p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Weak Sentences Identified</h3>
-                  <div className="space-y-4">
-                    {atsReport.weakSentences.map((item, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-4">
-                        <p className="text-gray-800 italic">"{item.sentence}"</p>
-                        <div className="mt-2">
-                          <h4 className="text-sm font-medium text-gray-700">Suggestions:</h4>
-                          <ul className="mt-1 text-sm text-gray-600 space-y-1">
-                            {item.suggestions.map((suggestion, idx) => (
-                              <li key={idx} className="flex items-start">
-                                <svg className="h-4 w-4 text-green-500 mr-1 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                {suggestion}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* AI Improvement Button */}
-                <div className="bg-white shadow rounded-lg p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Improve Your Resume</h3>
-                  <p className="text-gray-600 mb-4">Use our AI-powered tool to automatically fix issues and optimize your resume for this job.</p>
-                  <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    Auto-Improve with AI
-                  </button>
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">ATS Optimization Tips</h3>
+                  <ul className="space-y-3">
+                    <li className="flex items-start">
+                      <svg className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="ml-2 text-sm text-gray-600">Use standard fonts like Arial or Calibri</span>
+                    </li>
+                    <li className="flex items-start">
+                      <svg className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="ml-2 text-sm text-gray-600">Include relevant keywords from job descriptions</span>
+                    </li>
+                    <li className="flex items-start">
+                      <svg className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="ml-2 text-sm text-gray-600">Use clear section headers like "Experience" and "Education"</span>
+                    </li>
+                    <li className="flex items-start">
+                      <svg className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="ml-2 text-sm text-gray-600">Save in PDF format to preserve formatting</span>
+                    </li>
+                  </ul>
                 </div>
               </div>
-            ) : (
-              <div className="bg-white shadow rounded-lg p-12 text-center">
-                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <h3 className="mt-2 text-lg font-medium text-gray-900">Check Your Resume</h3>
-                <p className="mt-1 text-gray-500">Upload your resume to get an instant ATS compatibility score and detailed feedback.</p>
-              </div>
-            )}
+            </div>
           </div>
         </div>
+
+        {/* Analysis Results */}
+        {analysisResult && (
+          <div className="mt-8 bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
+            <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
+              <h2 className="text-xl font-bold text-gray-900">Analysis Results</h2>
+            </div>
+            <div className="p-6">
+              {/* Score */}
+              <div className="flex flex-col items-center mb-8">
+                <div className="relative">
+                  <svg className="w-48 h-48" viewBox="0 0 36 36">
+                    <path
+                      d="M18 2.0845
+                        a 15.9155 15.9155 0 0 1 0 31.831
+                        a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none"
+                      stroke="#e6e6e6"
+                      strokeWidth="3"
+                    />
+                    <path
+                      d="M18 2.0845
+                        a 15.9155 15.9155 0 0 1 0 31.831
+                        a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none"
+                      stroke={analysisResult.score >= 80 ? "#10B981" : analysisResult.score >= 60 ? "#F59E0B" : "#EF4444"}
+                      strokeWidth="3"
+                      strokeDasharray={`${analysisResult.score}, 100`}
+                    />
+                    <text x="18" y="20.5" textAnchor="middle" fill="#1F2937" fontSize="8" fontWeight="bold">
+                      {analysisResult.score}%
+                    </text>
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mt-4">
+                  {analysisResult.score >= 80 ? 'Excellent!' : analysisResult.score >= 60 ? 'Good' : 'Needs Improvement'}
+                </h3>
+                <p className="text-gray-600 mt-2">
+                  {analysisResult.score >= 80 
+                    ? 'Your resume is well-optimized for ATS systems' 
+                    : analysisResult.score >= 60 
+                      ? 'Your resume has good ATS compatibility' 
+                      : 'Your resume needs some improvements for ATS compatibility'}
+                </p>
+              </div>
+              
+              {/* Keywords */}
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Keyword Analysis</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {analysisResult.keywords.map((keyword, index) => (
+                    <div key={index} className="flex items-center p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                      <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${
+                        keyword.found ? 'bg-green-100' : 'bg-red-100'
+                      }`}>
+                        {keyword.found ? (
+                          <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="ml-3">
+                        <span className={`font-bold ${keyword.found ? 'text-green-800' : 'text-red-800'}`}>
+                          {keyword.word}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Suggestions */}
+              <div className="mt-8">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Suggestions</h3>
+                <div className="space-y-3">
+                  {analysisResult.suggestions.map((suggestion, index) => (
+                    <div key={index} className="flex items-start p-4 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border border-indigo-100">
+                      <div className="flex-shrink-0 mt-1">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+                          <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                      </div>
+                      <p className="ml-3 text-gray-700">{suggestion}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Improvements */}
+              <div className="mt-8">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Key Improvements</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {analysisResult.improvements.map((improvement, index) => (
+                    <div key={index} className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                      <p className="text-gray-700">{improvement}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

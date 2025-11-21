@@ -43,11 +43,11 @@ const TemplateManagement = () => {
   };
   
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="w-full px-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Template Management</h1>
-          <p className="mt-2 text-gray-600">Manage resume templates and their availability</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="mb-8 text-center md:text-left">
+          <h1 className="text-4xl font-bold text-gray-900 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">Template Management</h1>
+          <p className="mt-2 text-gray-600 text-lg">Manage resume templates and their availability</p>
         </div>
         
         {/* Add Template Button */}
@@ -67,7 +67,7 @@ const TemplateManagement = () => {
         {/* Templates Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {templates.map((template) => (
-            <div key={template.id} className="bg-white rounded-lg shadow overflow-hidden">
+            <div key={template.id} className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
               <div className="p-4">
                 <div className="bg-gray-200 border-2 border-dashed rounded-xl w-full h-48" />
               </div>
@@ -96,17 +96,15 @@ const TemplateManagement = () => {
                 <div className="mt-6 flex justify-between">
                   <button
                     onClick={() => handleStatusChange(template.id, !template.isActive)}
-                    className={`text-sm font-medium ${
-                      template.isActive ? 'text-red-600 hover:text-red-500' : 'text-green-600 hover:text-green-500'
-                    }`}
+                    className={`text-sm font-bold rounded-xl px-3 py-1 transition-all duration-300 transform hover:scale-105 ${template.isActive ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}
                   >
                     {template.isActive ? 'Deactivate' : 'Activate'}
                   </button>
                   <div className="flex space-x-2">
-                    <button className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                    <button className="text-sm font-bold text-indigo-600 hover:text-indigo-800 px-3 py-1 rounded-xl transition-all duration-300 transform hover:scale-105 hover:bg-indigo-50">
                       Edit
                     </button>
-                    <button className="text-sm font-medium text-red-600 hover:text-red-500">
+                    <button className="text-sm font-bold text-red-600 hover:text-red-800 px-3 py-1 rounded-xl transition-all duration-300 transform hover:scale-105 hover:bg-red-50">
                       Delete
                     </button>
                   </div>

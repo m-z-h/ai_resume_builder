@@ -72,33 +72,29 @@ const Analytics = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="w-full px-4">
-        <div className="mb-8">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
-              <p className="mt-2 text-gray-600">Comprehensive analytics and insights</p>
-            </div>
-            <div className="flex space-x-2">
-              {['7d', '30d', '90d', '1y'].map((range) => (
-                <button
-                  key={range}
-                  onClick={() => setTimeRange(range)}
-                  className={`px-4 py-2 text-sm font-medium rounded-md ${
-                    timeRange === range
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  {range}
-                </button>
-              ))}
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="mb-8 text-center md:text-left">
+          <h1 className="text-4xl font-bold text-gray-900 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">Analytics Dashboard</h1>
+          <p className="mt-2 text-gray-600 text-lg">Comprehensive analytics and insights</p>
+          <div className="flex space-x-2 mt-4">
+            {['7d', '30d', '90d', '1y'].map((range) => (
+              <button
+                key={range}
+                onClick={() => setTimeRange(range)}
+                className={`px-4 py-2 text-sm font-medium rounded-xl transition-all duration-300 transform hover:scale-105 ${
+                  timeRange === range
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 shadow-md'
+                }`}
+              >
+                {range}
+              </button>
+            ))}
           </div>
         </div>
 
-        {loading ? (
+        {loading || !analyticsData ? (
           <div className="flex justify-center py-12">
             <svg className="animate-spin h-12 w-12 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -109,7 +105,7 @@ const Analytics = () => {
           <>
             {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white shadow rounded-lg p-6">
+              <div className="bg-white shadow-xl rounded-2xl p-6 border border-gray-100">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
                     <div className="w-12 h-12 bg-indigo-100 rounded-md flex items-center justify-center">
@@ -211,7 +207,7 @@ const Analytics = () => {
               </div>
 
               {/* Job Role Trends */}
-              <div className="bg-white shadow rounded-lg p-6 lg:col-span-2">
+              <div className="bg-white shadow-xl rounded-2xl p-6 lg:col-span-2 border border-gray-100">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Job Role Trends</h2>
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
