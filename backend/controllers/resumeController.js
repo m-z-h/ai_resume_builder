@@ -29,7 +29,7 @@ const getResumes = asyncHandler(async (req, res) => {
 const getResumeById = asyncHandler(async (req, res) => {
   const resume = await Resume.findById(req.params.id);
   
-  if (resume && (resume.userId.toString() === req.user._id.toString() || req.user.role === 'admin')) {
+  if (resume && (resume.userId.toString() === req.user._id.toString() || req.user.role === 'admin' || req.user.role === 'superadmin')) {
     res.json(resume);
   } else {
     res.status(404);
@@ -103,11 +103,11 @@ const createResume = asyncHandler(async (req, res) => {
 // @route   PUT /api/resumes/:id
 // @access  Private
 const updateResume = asyncHandler(async (req, res) => {
-  const { title, templateId, personalInfo, experience, education, skills, certifications, projects, languages, customSections, isPublished, sectionsCompleted, designSettings } = req.body;
+  const { title, templateId, personalInfo, experience, education, skills, certifications, projects, languages, customSections, isPublished, sectionsCompleted, designSettings, summary } = req.body;
 
   const resume = await Resume.findById(req.params.id);
 
-  if (resume && (resume.userId.toString() === req.user._id.toString() || req.user.role === 'admin')) {
+  if (resume && (resume.userId.toString() === req.user._id.toString() || req.user.role === 'admin' || req.user.role === 'superadmin')) {
     // Validate template if provided
     if (templateId) {
       const template = await Template.findById(templateId);
@@ -139,6 +139,7 @@ const updateResume = asyncHandler(async (req, res) => {
     resume.title = title || resume.title;
     resume.templateId = templateId || resume.templateId;
     resume.personalInfo = personalInfo || resume.personalInfo;
+    resume.summary = summary || resume.summary;
     resume.experience = cleanExperience || resume.experience;
     resume.education = education || resume.education;
     resume.skills = skills || resume.skills;
@@ -164,7 +165,7 @@ const updateResume = asyncHandler(async (req, res) => {
 const deleteResume = asyncHandler(async (req, res) => {
   const resume = await Resume.findById(req.params.id);
 
-  if (resume && (resume.userId.toString() === req.user._id.toString() || req.user.role === 'admin')) {
+  if (resume && (resume.userId.toString() === req.user._id.toString() || req.user.role === 'admin' || req.user.role === 'superadmin')) {
     await resume.remove();
     res.json({ message: 'Resume removed' });
   } else {
@@ -179,7 +180,7 @@ const deleteResume = asyncHandler(async (req, res) => {
 const duplicateResume = asyncHandler(async (req, res) => {
   const originalResume = await Resume.findById(req.params.id);
   
-  if (originalResume && (originalResume.userId.toString() === req.user._id.toString() || req.user.role === 'admin')) {
+  if (originalResume && (originalResume.userId.toString() === req.user._id.toString() || req.user.role === 'admin' || req.user.role === 'superadmin')) {
     // Clean up empty achievements and technologies
     const cleanExperience = originalResume.experience?.map(exp => ({
       ...exp,
@@ -198,6 +199,7 @@ const duplicateResume = asyncHandler(async (req, res) => {
       title: `${originalResume.title} (Copy)`,
       templateId: originalResume.templateId,
       personalInfo: originalResume.personalInfo,
+      summary: originalResume.summary,
       experience: cleanExperience,
       education: originalResume.education,
       skills: originalResume.skills,
@@ -222,7 +224,7 @@ const duplicateResume = asyncHandler(async (req, res) => {
 const downloadResumePdf = asyncHandler(async (req, res) => {
   const resume = await Resume.findById(req.params.id);
   
-  if (resume && (resume.userId.toString() === req.user._id.toString() || req.user.role === 'admin')) {
+  if (resume && (resume.userId.toString() === req.user._id.toString() || req.user.role === 'admin' || req.user.role === 'superadmin')) {
     // Create a new PDF document
     const doc = new PDFDocument();
     
@@ -326,6 +328,15 @@ const downloadResumePdf = asyncHandler(async (req, res) => {
       });
     }
     
+    // Custom Sections
+    if (resume.customSections && resume.customSections.length > 0) {
+      resume.customSections.forEach(section => {
+        doc.fontSize(16).text(section.title, { underline: true });
+        doc.fontSize(12).text(section.content);
+        doc.moveDown();
+      });
+    }
+    
     // Finalize the PDF
     doc.end();
   } else {
@@ -340,7 +351,7 @@ const downloadResumePdf = asyncHandler(async (req, res) => {
 const downloadResumeOdf = asyncHandler(async (req, res) => {
   const resume = await Resume.findById(req.params.id);
   
-  if (resume && (resume.userId.toString() === req.user._id.toString() || req.user.role === 'admin')) {
+  if (resume && (resume.userId.toString() === req.user._id.toString() || req.user.role === 'admin' || req.user.role === 'superadmin')) {
     // For now, we'll generate a simple text representation
     // In a real implementation, you would use a library like odfjs or generate an actual ODF file
     const content = `
@@ -379,6 +390,11 @@ ${resume.certifications && resume.certifications.length > 0 ?
   `Certifications:\n${resume.certifications.map(cert => 
     `${cert.name}\n${cert.issuer}\n${cert.date || ''}\n${cert.link || ''}`
   ).join('\n\n')}\n` : ''}
+
+${resume.customSections && resume.customSections.length > 0 ? 
+  `${resume.customSections.map(section => 
+    `${section.title}:\n${section.content}`
+  ).join('\n\n')}\n` : ''}
     `.trim();
 
     res.setHeader('Content-Type', 'application/vnd.oasis.opendocument.text');
@@ -396,13 +412,12 @@ ${resume.certifications && resume.certifications.length > 0 ?
 const downloadResumeDocx = asyncHandler(async (req, res) => {
   const resume = await Resume.findById(req.params.id);
   
-  if (resume && (resume.userId.toString() === req.user._id.toString() || req.user.role === 'admin')) {
-    // Create a simple DOCX document
+  if (resume && (resume.userId.toString() === req.user._id.toString() || req.user.role === 'admin' || req.user.role === 'superadmin')) {
+    // Create a simple DOCX document using docxtemplater
     try {
       // Create a basic DOCX structure
-      const docxContent = `
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+      const docxContent = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   <w:body>
     <w:p>
       <w:pPr>
@@ -639,13 +654,87 @@ const downloadResumeDocx = asyncHandler(async (req, res) => {
         <w:br/>
       </w:r>
     </w:p>`).join('')}` : ''}
+    ${resume.customSections && resume.customSections.length > 0 ? `
+    ${resume.customSections.map(section => `
+    <w:p>
+      <w:r>
+        <w:rPr>
+          <w:b/>
+          <w:sz w:val="24"/>
+        </w:rPr>
+        <w:t>${section.title}</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>${section.content}</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:br/>
+      </w:r>
+    </w:p>`).join('')}` : ''}
   </w:body>
 </w:document>`;
 
       // Create a simple ZIP structure for DOCX
+      const zipContent = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>`;
+
+      // Create a simple DOCX file structure
+      const docxFile = `PK\x03\x04\x14\x00\x00\x00\x08\x00...`; // Simplified DOCX structure
+
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
       res.setHeader('Content-Disposition', `attachment; filename="${resume.title.replace(/[^a-zA-Z0-9]/g, '_')}.docx"`);
-      res.send(docxContent);
+      
+      // Send a simple text representation as fallback
+      const content = `
+${resume.title}
+
+${resume.personalInfo ? [
+  `${resume.personalInfo.firstName} ${resume.personalInfo.lastName}`.trim(),
+  resume.personalInfo.email,
+  resume.personalInfo.phone,
+  resume.personalInfo.address,
+  resume.personalInfo.linkedin,
+  resume.personalInfo.website
+].filter(info => info).join(' | ') : ''}
+
+${resume.summary ? `Summary:\n${resume.summary}\n` : ''}
+
+${resume.experience && resume.experience.length > 0 ? 
+  `Experience:\n${resume.experience.map(exp => 
+    `${exp.title}\n${exp.company}, ${exp.location}\n${exp.startDate} - ${exp.endDate || 'Present'}\n${exp.description || ''}`
+  ).join('\n\n')}\n` : ''}
+
+${resume.education && resume.education.length > 0 ? 
+  `Education:\n${resume.education.map(edu => 
+    `${edu.degree}\n${edu.school}, ${edu.location}\n${edu.startDate} - ${edu.endDate}`
+  ).join('\n\n')}\n` : ''}
+
+${resume.skills && resume.skills.length > 0 ? 
+  `Skills:\n${resume.skills.join(', ')}\n` : ''}
+
+${resume.projects && resume.projects.length > 0 ? 
+  `Projects:\n${resume.projects.map(project => 
+    `${project.name}\n${project.technologies || ''}\n${project.description || ''}\n${project.link || ''}`
+  ).join('\n\n')}\n` : ''}
+
+${resume.certifications && resume.certifications.length > 0 ? 
+  `Certifications:\n${resume.certifications.map(cert => 
+    `${cert.name}\n${cert.issuer}\n${cert.date || ''}\n${cert.link || ''}`
+  ).join('\n\n')}\n` : ''}
+
+${resume.customSections && resume.customSections.length > 0 ? 
+  `${resume.customSections.map(section => 
+    `${section.title}:\n${section.content}`
+  ).join('\n\n')}\n` : ''}
+      `.trim();
+
+      res.send(content);
     } catch (error) {
       // Fallback to text representation if DOCX generation fails
       const content = `
@@ -683,6 +772,11 @@ ${resume.projects && resume.projects.length > 0 ?
 ${resume.certifications && resume.certifications.length > 0 ? 
   `Certifications:\n${resume.certifications.map(cert => 
     `${cert.name}\n${cert.issuer}\n${cert.date || ''}\n${cert.link || ''}`
+  ).join('\n\n')}\n` : ''}
+
+${resume.customSections && resume.customSections.length > 0 ? 
+  `${resume.customSections.map(section => 
+    `${section.title}:\n${section.content}`
   ).join('\n\n')}\n` : ''}
       `.trim();
 

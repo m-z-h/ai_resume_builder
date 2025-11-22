@@ -218,6 +218,7 @@ const ResumeBuilder = () => {
   const [activeSection, setActiveSection] = useState('personal');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiLoadingIndex, setAiLoadingIndex] = useState(null);
+  const [newSkill, setNewSkill] = useState(''); // Add state for individual skill input
   // Removed showPreview state since preview is always visible
   
   // Debounce timer ref for real-time saving
@@ -1141,20 +1142,100 @@ const ResumeBuilder = () => {
                 {/* Skills Section */}
                 {activeSection === 'skills' && (
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">Skills</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Skills</h2>
                     <div>
-                      <label htmlFor="skills" className="block text-lg font-bold text-gray-700 mb-2">
-                        Skills (comma separated)
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Add Skills</label>
+                      <div className="flex gap-2 mb-4">
+                        <input
+                          type="text"
+                          value={newSkill || ''}
+                          onChange={(e) => setNewSkill(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (newSkill && newSkill.trim() !== '') {
+                                const currentSkills = Array.isArray(resumeData.skills) ? resumeData.skills : [];
+                                const updatedSkills = [...currentSkills, newSkill.trim()];
+                                handleInputChange('skills', 'skills', updatedSkills);
+                                setNewSkill('');
+                              }
+                            }
+                          }}
+                          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                          placeholder="Type a skill and press Enter or click Add"
+                        />
+                        <button
+                          onClick={() => {
+                            if (newSkill && newSkill.trim() !== '') {
+                              const currentSkills = Array.isArray(resumeData.skills) ? resumeData.skills : [];
+                              const updatedSkills = [...currentSkills, newSkill.trim()];
+                              handleInputChange('skills', 'skills', updatedSkills);
+                              setNewSkill('');
+                            }
+                          }}
+                          className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium hover:from-indigo-700 hover:to-purple-700"
+                        >
+                          Add
+                        </button>
+                      </div>
+                      <p className="mt-2 text-sm text-gray-500">Press Enter or click Add after typing each skill</p>
+                      
+                      {Array.isArray(resumeData.skills) && resumeData.skills.length > 0 && (
+                        <div className="mt-6">
+                          <h3 className="text-lg font-medium text-gray-900 mb-3">Current Skills:</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {resumeData.skills.map((skill, index) => (
+                              <span key={index} className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-medium flex items-center">
+                                {skill}
+                                <button
+                                  onClick={() => {
+                                    const currentSkills = Array.isArray(resumeData.skills) ? [...resumeData.skills] : [];
+                                    currentSkills.splice(index, 1);
+                                    handleInputChange('skills', 'skills', currentSkills);
+                                  }}
+                                  className="ml-2 text-indigo-500 hover:text-indigo-700 focus:outline-none"
+                                >
+                                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-6 flex justify-end">
+                      <button
+                        onClick={saveAndNext}
+                        className="inline-flex items-center px-6 py-3 border border-transparent text-base font-bold rounded-xl shadow-sm text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300"
+                      >
+                        <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Save & Next
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Experience Section */}
+                {activeSection === 'experience' && (
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4">Experience</h2>
+                    <div>
+                      <label htmlFor="experience" className="block text-lg font-bold text-gray-700 mb-2">
+                        Experience (comma separated)
                       </label>
                       <textarea
-                        id="skills"
+                        id="experience"
                         rows={6}
-                        value={Array.isArray(resumeData.skills) ? resumeData.skills.join(', ') : ''}
-                        onChange={(e) => handleInputChange('skills', 'skills', e.target.value.split(',').map(skill => skill.trim()).filter(skill => skill))}
+                        value={Array.isArray(resumeData.experience) ? resumeData.experience.join(', ') : ''}
+                        onChange={(e) => handleInputChange('experience', 'experience', e.target.value.split(',').map(exp => exp.trim()).filter(exp => exp))}
                         className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full text-base border-gray-300 rounded-xl py-3 px-4 transition-all duration-300 hover:shadow-md"
-                        placeholder="JavaScript, React, Node.js, Python, SQL, etc."
+                        placeholder="Software Engineer at XYZ Corp, 2020 - Present, etc."
                       ></textarea>
-                      <p className="mt-2 text-sm text-gray-500">Enter skills separated by commas</p>
+                      <p className="mt-2 text-sm text-gray-500">Enter experience separated by commas</p>
                     </div>
                     <div className="mt-6 flex justify-end">
                       <button

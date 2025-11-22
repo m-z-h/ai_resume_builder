@@ -89,19 +89,22 @@ const resumeSchema = new mongoose.Schema({
   },
   // Section-wise completion tracking
   sectionsCompleted: {
+    templateSelection: { type: Boolean, default: false },
     personalInfo: { type: Boolean, default: false },
     summary: { type: Boolean, default: false },
     experience: { type: Boolean, default: false },
     education: { type: Boolean, default: false },
     skills: { type: Boolean, default: false },
     projects: { type: Boolean, default: false },
-    certifications: { type: Boolean, default: false }
+    certifications: { type: Boolean, default: false },
+    additionalInfo: { type: Boolean, default: false },
+    preview: { type: Boolean, default: false }
   },
   // Design customization
   designSettings: {
     template: { type: String, default: 'modern' },
-    fontFamily: { type: String, default: 'Inter' },
-    fontSize: { type: String, default: 'medium' },
+    fontFamily: { type: String, default: 'Inter, sans-serif' },
+    fontSize: { type: String, default: '16px' },
     colorTheme: { type: String, default: 'blue' },
     layout: { type: String, default: 'single-column' }
   },
